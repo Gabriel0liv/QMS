@@ -1,165 +1,161 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Lock, User } from "lucide-react";
+import {
+  Lock, User, Factory, ClipboardCheck,
+  Settings2, FlaskConical, ShieldCheck,
+} from "lucide-react";
 
 const DEMO_USERS = [
-  { label: "Operador", cred: "operador / 123" },
-  { label: "Qualidade", cred: "qualidade / 123" },
-  { label: "Produção", cred: "producao / 123" },
-  { label: "I&D", cred: "rd / 123" },
-  { label: "Admin (TI)", cred: "admin / 123" },
+  { icon: Factory,        label: "Operador",   username: "operador"  },
+  { icon: ClipboardCheck, label: "Qualidade",  username: "qualidade" },
+  { icon: Settings2,      label: "Produção",   username: "producao"  },
+  { icon: FlaskConical,   label: "I&D",        username: "rd"        },
+  { icon: ShieldCheck,    label: "Admin (TI)", username: "admin"     },
 ];
 
 export function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!username || !password) {
-      setError("Preencha todos os campos.");
-      return;
-    }
+    if (!username || !password) { setError("Preencha todos os campos."); return; }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 350));
     const ok = login(username, password);
     setLoading(false);
-    if (!ok) {
-      setError("Credenciais inválidas. Tente novamente.");
-      setPassword("");
-    }
+    if (!ok) { setError("Credenciais inválidas. Tente novamente."); setPassword(""); }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[540px]">
-
-        {/* Left branding panel */}
-        <div className="hidden md:flex md:w-2/5 bg-blue-600 flex-col justify-between p-10 text-white">
-          <div>
-            <div className="text-4xl font-extrabold tracking-tight mb-1">QMS</div>
-            <div className="text-blue-200 text-sm font-medium">Quality Management System</div>
-          </div>
-
-          <div className="space-y-5">
-            {[
-              { icon: "🏭", title: "Chão de Fábrica", desc: "Registo de Não-Conformidades" },
-              { icon: "🔍", title: "Inspeção", desc: "Controlo de receções e matérias-primas" },
-              { icon: "📄", title: "Documentação", desc: "Especificações e desenhos técnicos" },
-            ].map((f) => (
-              <div key={f.title} className="flex items-start gap-3">
-                <span className="text-2xl">{f.icon}</span>
-                <div>
-                  <p className="font-semibold text-sm">{f.title}</p>
-                  <p className="text-blue-200 text-xs">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-blue-300 text-xs">
-            © 2026 QMS · Todos os direitos reservados
-          </p>
+    <div className="min-h-screen bg-base-200 flex items-center justify-center ">
+      {/*
+        max-w-4xl  = 56rem = 896px  — bom equilíbrio para login desktop
+        md:h-[580px] fixa a altura para que a imagem preencha toda a seção
+      */}
+      <div
+        className="w-full max-w-4xl bg-base-100 rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row"
+        style={{ minHeight: "600px" }}
+      >
+        {/* ── Left: full-bleed image, sem nenhum padding ─────────────── */}
+        <div className="hidden md:block w-3/5 relative">
+          <img
+            src="/img-fechadura.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+            draggable={false}
+          />
         </div>
 
-        {/* Right form panel */}
-        <div className="flex flex-col justify-center flex-1 p-8 sm:p-12">
-          {/* Mobile-only title */}
+        {/* ── Right: form panel ───────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col justify-center px-8 py-12">
+
+          {/* Mobile-only logo */}
           <div className="md:hidden text-center mb-8">
-            <p className="text-3xl font-extrabold text-blue-600">QMS</p>
-            <p className="text-sm text-gray-400">Quality Management System</p>
+            <p className="text-4xl font-extrabold" style={{ color: "var(--brand-primary)" }}>QMS</p>
+            <p className="text-xs text-base-content/50">Quality Management System</p>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">Bem-vindo</h2>
-          <p className="text-sm text-gray-500 mb-8">Introduza as suas credenciais para aceder</p>
+          {/* Heading */}
+          <h2 className="text-2xl font-bold text-base-content">Bem-vindo</h2>
+          <p className="text-sm text-base-content/50 mt-1 mb-8">
+            Introduza as suas credenciais para aceder ao sistema
+          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username */}
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Utilizador</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Nome de utilizador"
-                  autoComplete="username"
-                  className="w-full rounded-xl border border-gray-300 bg-white pl-10 pr-4 py-3 text-gray-900 text-sm placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
+          {/* ── Form: inputs and button with identical height (h-11) ── */}
+          <form onSubmit={handleSubmit} noValidate>
+
+            <div className="flex flex-col gap-5">
+              {/* Utilizador */}
+              <div>
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-semibold text-base-content mb-1.5"
+                >
+                  Utilizador
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/40 pointer-events-none" />
+                  <input
+                    id="username"
+                    type="text"
+                    placeholder="Nome de utilizador"
+                    autoComplete="username"
+                    className="input input-bordered w-full h-11 pl-9 text-sm"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Password */}
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Palavra-passe</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  className="w-full rounded-xl border border-gray-300 bg-white pl-10 pr-4 py-3 text-gray-900 text-sm placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+              {/* Palavra-passe */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold text-base-content mb-1.5"
+                >
+                  Palavra-passe
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/40 pointer-events-none" />
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="input input-bordered w-full h-11 pl-9 text-sm"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Error */}
             {error && (
-              <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {error}
-              </div>
+              <p className="text-sm text-error mt-3">{error}</p>
             )}
 
-            {/* Submit */}
+            {/* Submit — mesma altura h-11 e largura total dos inputs */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 text-sm transition flex items-center justify-center gap-2"
+              className="btn btn-primary w-full h-11 text-sm mt-6"
             >
-              {loading ? (
-                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-              ) : null}
+              {loading && <span className="loading loading-spinner loading-sm" />}
               {loading ? "A autenticar…" : "Entrar"}
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-8">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-              Credenciais de demonstração
+          {/* Demo quick-access icon buttons */}
+          <div className="mt-8 pt-6 border-t border-base-200">
+            <p className="text-xs font-semibold uppercase tracking-widest text-base-content/35 mb-3">
+              Acesso rápido (demo)
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {DEMO_USERS.map((u) => (
-                <button
-                  key={u.label}
-                  type="button"
-                  onClick={() => {
-                    const [usr] = u.cred.split(" / ");
-                    setUsername(usr);
-                    setPassword("123");
-                    setError("");
-                  }}
-                  className="text-left rounded-lg border border-gray-200 px-3 py-2 hover:bg-blue-50 hover:border-blue-300 transition group"
-                >
-                  <p className="text-xs font-semibold text-gray-700 group-hover:text-blue-700">{u.label}</p>
-                  <p className="text-xs text-gray-400 font-mono">{u.cred}</p>
-                </button>
+            <div className="flex items-center gap-2">
+              {DEMO_USERS.map(({ icon: Icon, label, username: u }) => (
+                <div key={u} className="tooltip tooltip-top" data-tip={label}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm btn-circle border border-base-300 hover:border-primary hover:text-primary hover:bg-primary/10"
+                    onClick={() => { setUsername(u); setPassword("123"); setError(""); }}
+                    aria-label={label}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </button>
+                </div>
               ))}
             </div>
           </div>
+
+          <p className="text-xs text-base-content/25 mt-8">
+            © 2026 QMS · Todos os direitos reservados
+          </p>
         </div>
       </div>
     </div>

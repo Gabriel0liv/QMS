@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "web-component-design": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "4b59e1914ae7ab006c3fbbd770552b2c369e3c72d95fdd2cf651f0c3e602c0ec"
+    }
+  }
+}

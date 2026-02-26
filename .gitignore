@@ -1,0 +1,17 @@
+# Dependências
+node_modules/
+
+# Builds e temporários
+dist/
+build/
+.temp_ag_kit/
+.agent/
+.agents/
+
+# Variáveis de ambiente
+.env
+.env.local
+
+# Ficheiros de sistema
+.DS_Store
+Thumbs.db

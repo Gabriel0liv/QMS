@@ -89,7 +89,7 @@ Dentro da pasta `frontend`, tem acesso aos seguintes comandos principais:
 
 ---
 
-## 🔗 Configurar os Links do Chão de Fábrica e Mobilidade
+## Configurar os Links do Chão de Fábrica e Mobilidade
 
 Na página de **Registo NC**, os botões "Abrir Mobilidade" e "Abrir Chão de Fábrica" carregam páginas externas dentro da aplicação através de _Iframes_. Atualmente as hiperligações de demonstração estão a apontar para a Wikipédia.
 
@@ -99,7 +99,7 @@ Para configurar as suas próprias hiperligações:
 2. Procure pela tag `<iframe>` (aproximadamente na linha 469, ou pesquise por _"IFRAME_MOBILIDADE"_).
 3. Modifique os URLs na propriedade `src` para os endereços das suas aplicações internas.
 
-### 🌐 Funcionamento em Redes Locais (Intranet)
+### Funcionamento em Redes Locais (Intranet)
 
 **Sim, os Iframes funcionam perfeitamente com redes locais** (usando IPs locais como `http://192.168.1.100:8080/app` ou _hostnames_ da rede interna), com as seguintes condicões normais dos navegadores modernos:
 

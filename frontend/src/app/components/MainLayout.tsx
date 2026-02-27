@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router";
 import {
     Factory, Package, FileText, LogOut, Menu, X,
-    Wrench, Tag, ClipboardCheck, PenLine, Users, Server,
+    Wrench, Tag, ClipboardCheck, PenLine, Users, Server, MonitorSmartphone
 } from "lucide-react";
 import { useAuth, UserRole } from "../context/AuthContext";
 
@@ -11,10 +11,13 @@ interface NavItem {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     roles: UserRole[];
+    isSubItem?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
     { to: "/registo-nc", label: "Registo NC", icon: Factory, roles: ["operator"] },
+    { to: "/registo-nc?view=mobilidade", label: "Mobilidade", icon: MonitorSmartphone, roles: ["operator"], isSubItem: true },
+    { to: "/registo-nc?view=chao_fabrica", label: "Chão de Fábrica", icon: Factory, roles: ["operator"], isSubItem: true },
     { to: "/recepcoes", label: "Receções", icon: Package, roles: ["quality"] },
     { to: "/retrabalho", label: "Retrabalho", icon: Wrench, roles: ["quality"] },
     { to: "/catalogo-defeitos", label: "Catálogo de Defeitos", icon: Tag, roles: ["quality"] },
@@ -32,6 +35,7 @@ export function MainLayout() {
     const { user, logout, hasRole } = useAuth();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const location = useLocation();
 
     const visibleItems = NAV_ITEMS.filter((item) => hasRole(...item.roles));
 
@@ -49,23 +53,31 @@ export function MainLayout() {
 
             <nav className="flex-1 overflow-y-auto px-3 py-4">
                 <ul className="space-y-0.5">
-                    {visibleItems.map(({ to, label, icon: Icon }) => (
-                        <li key={to}>
-                            <NavLink
-                                to={to}
-                                onClick={() => setSidebarOpen(false)}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${isActive
-                                        ? "bg-primary text-primary-content shadow-sm"
-                                        : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
-                                    }`
-                                }
-                            >
-                                <Icon className="h-4 w-4 shrink-0" />
-                                {label}
-                            </NavLink>
-                        </li>
-                    ))}
+                    {visibleItems.map(({ to, label, icon: Icon, isSubItem }) => {
+                        const isActive = to.includes("?") 
+                            ? location.pathname + location.search === to
+                            : location.pathname === to && !location.search;
+                            
+                        return (
+                            <li key={to}>
+                                <NavLink
+                                    to={to}
+                                    onClick={() => setSidebarOpen(false)}
+                                    className={() =>
+                                        `flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+                                            isSubItem ? "ml-4 opacity-80" : ""
+                                        } ${isActive
+                                            ? "bg-primary text-primary-content shadow-sm"
+                                            : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
+                                        }`
+                                    }
+                                >
+                                    <Icon className={isSubItem ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4 shrink-0"} />
+                                    {label}
+                                </NavLink>
+                            </li>
+                        );
+                    })}
                 </ul>
             </nav>
 

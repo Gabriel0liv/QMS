@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Plus, Trash2, Pencil, Send, X, Clock, CheckCircle, AlertTriangle, Search, List, LayoutGrid, Filter, ArrowLeft, ChevronRight, ChevronLeft, MonitorSmartphone, Factory } from "lucide-react";
+import { useSearchParams } from "react-router";
 
 // ── constant data (unchanged) ─────────────────────────────────────────────
 const ARTIGOS: Record<string, { descricao: string; tipo?: string; setor?: string }> = {
@@ -77,16 +78,16 @@ interface HistoricoItem {
   destino: string;
   codigoDestino: string;
   observacoes: string;
-  estadoMovimentacao: "pendente" | "movimentado";
+  estadoMovimentacao: "pendente" | "movimentado" | "concluído";
 }
 
 const HISTORICO_INICIAL: HistoricoItem[] = [
   { id: "h1", data: "26/02/2026 10:42", codigoArtigo: "08-AK-003-11",  descricao: "PUNHO AAJ100 VIBRADO",            quantidade: "12", destino: "Derreter", codigoDestino: "CR001", observacoes: "Porosidade", estadoMovimentacao: "pendente" },
   { id: "h2", data: "26/02/2026 10:42", codigoArtigo: "03-15-412-11",  descricao: "CORPO (INT.) 1520 VIBRADO",        quantidade: "5",  destino: "Derreter", codigoDestino: "CR001", observacoes: "", estadoMovimentacao: "pendente" },
-  { id: "h3", data: "26/02/2026 10:42", codigoArtigo: "03-15-413-11",  descricao: "TAMPA 1520 VIBRADO (CONES)",      quantidade: "5",  destino: "Derreter", codigoDestino: "CR001", observacoes: "", estadoMovimentacao: "pendente" },
-  { id: "h4", data: "25/02/2026 14:15", codigoArtigo: "08-15-001-44",  descricao: "PUNHO 1500 CINZA 9006",           quantidade: "8",  destino: "Decapar",  codigoDestino: "CQT01", observacoes: "Dimensional", estadoMovimentacao: "pendente" },
-  { id: "h5", data: "24/02/2026 08:30", codigoArtigo: "02-10-001-23",  descricao: "ABA CURVA DOB. 1000 PRETO",      quantidade: "45", destino: "Sucatar",  codigoDestino: "CS001", observacoes: "", estadoMovimentacao: "pendente" },
-  { id: "h6", data: "24/02/2026 08:30", codigoArtigo: "08-VE-001-76",  descricao: "PUNHO VELA PRETO 9005-SAV",      quantidade: "3",  destino: "Decapar",  codigoDestino: "CQT01", observacoes: "Rebarbas", estadoMovimentacao: "pendente" },
+  { id: "h3", data: "26/02/2026 10:42", codigoArtigo: "03-15-413-11",  descricao: "TAMPA 1520 VIBRADO (CONES)",      quantidade: "5",  destino: "Derreter", codigoDestino: "CR001", observacoes: "", estadoMovimentacao: "movimentado" },
+  { id: "h4", data: "25/02/2026 14:15", codigoArtigo: "08-15-001-44",  descricao: "PUNHO 1500 CINZA 9006",           quantidade: "8",  destino: "Decapar",  codigoDestino: "CQT01", observacoes: "Dimensional", estadoMovimentacao: "movimentado" },
+  { id: "h5", data: "24/02/2026 08:30", codigoArtigo: "02-10-001-23",  descricao: "ABA CURVA DOB. 1000 PRETO",      quantidade: "45", destino: "Sucatar",  codigoDestino: "CS001", observacoes: "", estadoMovimentacao: "concluído" },
+  { id: "h6", data: "24/02/2026 08:30", codigoArtigo: "08-VE-001-76",  descricao: "PUNHO VELA PRETO 9005-SAV",      quantidade: "3",  destino: "Decapar",  codigoDestino: "CQT01", observacoes: "Rebarbas", estadoMovimentacao: "concluído" },
 ];
 
 // ── Components ─────────────────────────────────────────────────────────────
@@ -333,12 +334,27 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
 
 // ── Main Controller ────────────────────────────────────────────────────────
 export function RegistoNC() {
-  const [view, setView] = useState<"LIST" | "ADD" | "IFRAME_MOBILIDADE" | "IFRAME_CHAO_FABRICA">("LIST");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = searchParams.get("view");
+  const view = viewParam === "mobilidade" ? "IFRAME_MOBILIDADE" : viewParam === "chao_fabrica" ? "IFRAME_CHAO_FABRICA" : viewParam === "add" ? "ADD" : "LIST";
+  
+  const setView = (v: "LIST" | "ADD" | "IFRAME_MOBILIDADE" | "IFRAME_CHAO_FABRICA") => {
+    if (v === "LIST") setSearchParams({});
+    else if (v === "IFRAME_MOBILIDADE") setSearchParams({ view: "mobilidade" });
+    else if (v === "IFRAME_CHAO_FABRICA") setSearchParams({ view: "chao_fabrica" });
+    else if (v === "ADD") setSearchParams({ view: "add" });
+  };
+
   const [historico, setHistorico] = useState<HistoricoItem[]>(HISTORICO_INICIAL);
   const [submitted, setSubmitted] = useState(false);
   const [filters, setFilters] = useState({ data: "", artigo: "", designacao: "", qtd: "", qtdOperator: "=", destino: "", obs: "", estado: "" });
   const [showFilters, setShowFilters] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [editingRecord, setEditingRecord] = useState<HistoricoItem | null>(null);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [viewParam]);
 
   const filteredHistory = useMemo(() => {
     return historico.filter(h => {
@@ -392,11 +408,26 @@ export function RegistoNC() {
   };
 
   const toggleEstado = (id: string) => {
-    setHistorico(prev => prev.map(h => 
-      h.id === id 
-        ? { ...h, estadoMovimentacao: h.estadoMovimentacao === "pendente" ? "movimentado" : "pendente" } 
-        : h
-    ));
+    setHistorico(prev => prev.map(h => {
+      if (h.id === id) {
+        if (h.estadoMovimentacao === "concluído") return h; // Não muda o estado concluído se não for pela Qualidade
+        return { ...h, estadoMovimentacao: h.estadoMovimentacao === "pendente" ? "movimentado" : "pendente" };
+      }
+      return h;
+    }));
+  };
+
+  const handleDeleteRecord = (id: string) => {
+    if (confirm("Tem a certeza que deseja eliminar este registo?")) {
+      setHistorico(prev => prev.filter(h => h.id !== id));
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (editingRecord) {
+      setHistorico(prev => prev.map(h => h.id === editingRecord.id ? editingRecord : h));
+      setEditingRecord(null);
+    }
   };
 
   if (view === "ADD") {
@@ -413,7 +444,7 @@ export function RegistoNC() {
     return (
       <div className="flex" style={{ height: "calc(100vh - 64px)" }}>
         {/* Sidebar */}
-        <div className="w-16 md:w-20 bg-base-100 border-r border-base-200 flex flex-col items-center py-4 flex-shrink-0 z-50 shadow-sm relative">
+        <div className="w-16 md:w-20 bg-base-100 border-r border-base-200 flex flex-col items-center py-4 gap-4 flex-shrink-0 z-50 shadow-sm relative">
           <button 
             className="btn btn-ghost btn-circle w-12 h-12 flex items-center justify-center text-base-content/50 hover:text-primary hover:bg-primary/10 transition-colors"
             onClick={() => setView("LIST")}
@@ -493,7 +524,7 @@ export function RegistoNC() {
           {/* Iframe Area */}
           <div className="flex-1 bg-white relative">
             <iframe 
-              src={view === "IFRAME_MOBILIDADE" ? "https://pt.wikipedia.org/wiki/Portal:Tecnologia" : "https://pt.wikipedia.org/wiki/Portal:Engenharia"} 
+              src={view === "IFRAME_MOBILIDADE" ? "https://github.com/" : "https://pt.wikipedia.org/wiki/Portal:Engenharia"} 
               className="absolute inset-0 w-full h-full border-0"
               title="External System View"
             />
@@ -524,20 +555,6 @@ export function RegistoNC() {
           </div>
         </div>
         <div className="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0">
-          <button 
-            className="btn btn-outline border-base-300 btn-md whitespace-nowrap rounded-xl gap-2 hover:bg-base-200 hover:border-base-300 hover:text-base-content"
-            onClick={() => { setView("IFRAME_MOBILIDADE"); setCurrentIndex(0); }}
-          >
-            <MonitorSmartphone className="h-4 w-4"/>
-            <span className="font-bold text-xs">Abrir Mobilidade</span>
-          </button>
-          <button 
-            className="btn btn-outline border-base-300 btn-md whitespace-nowrap rounded-xl gap-2 hover:bg-base-200 hover:border-base-300 hover:text-base-content"
-            onClick={() => { setView("IFRAME_CHAO_FABRICA"); setCurrentIndex(0); }}
-          >
-            <Factory className="h-4 w-4"/>
-            <span className="font-bold text-xs">Abrir Chão de Fábrica</span>
-          </button>
           <button 
             className="btn btn-primary btn-md rounded-xl shadow-lg shadow-primary/20 gap-2 px-6 group transition-transform active:scale-95 whitespace-nowrap"
             onClick={() => setView("ADD")}
@@ -590,9 +607,11 @@ export function RegistoNC() {
                   <div className="text-[10px] font-black opacity-30 uppercase tracking-widest font-mono">{h.data}</div>
                   <div className="font-mono text-base font-black text-primary">{h.codigoArtigo}</div>
                 </div>
-                <span className={`badge ${h.estadoMovimentacao === 'pendente' ? 'badge-warning' : 'badge-success'} badge-outline font-black text-[9px] h-5 tracking-tighter uppercase px-3 cursor-pointer`} onClick={() => toggleEstado(h.id)}>
-                  {h.estadoMovimentacao}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`badge ${h.estadoMovimentacao === 'pendente' ? 'badge-warning' : h.estadoMovimentacao === 'movimentado' ? 'badge-info' : 'badge-success'} badge-outline font-black text-[9px] h-5 tracking-tighter uppercase px-3 cursor-pointer`} onClick={() => toggleEstado(h.id)}>
+                    {h.estadoMovimentacao}
+                  </span>
+                </div>
               </div>
               
               <div className="text-xs font-bold opacity-80 uppercase leading-relaxed">{h.descricao}</div>
@@ -617,6 +636,17 @@ export function RegistoNC() {
                   "{h.observacoes}"
                 </div>
               )}
+
+              {h.estadoMovimentacao !== "concluído" && (
+                <div className="flex justify-end gap-2 pt-2 border-t border-base-200/50 mt-2">
+                  <button className="btn btn-ghost btn-sm btn-circle hover:text-primary hover:bg-primary/10" onClick={() => setEditingRecord({...h})}>
+                    <Pencil className="h-4 w-4"/>
+                  </button>
+                  <button className="btn btn-ghost btn-sm btn-circle hover:text-error hover:bg-error/10" onClick={() => handleDeleteRecord(h.id)}>
+                    <Trash2 className="h-4 w-4"/>
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -633,6 +663,7 @@ export function RegistoNC() {
                 <th className="p-4 border-b border-base-200"><span className="text-[9px] font-black uppercase tracking-widest opacity-40">Destino</span></th>
                 <th className="p-4 border-b border-base-200"><span className="text-[9px] font-black uppercase tracking-widest opacity-40">Observações</span></th>
                 <th className="p-4 border-b border-base-200 text-center w-36"><span className="text-[9px] font-black uppercase tracking-widest opacity-40 block w-full">Estado</span></th>
+                <th className="p-4 border-b border-base-200 w-24"></th>
               </tr>
               {showFilters && (
                 <tr className="bg-base-200/50">
@@ -671,8 +702,10 @@ export function RegistoNC() {
                        <option value="">Todas</option>
                        <option value="pendente">Pendente</option>
                        <option value="movimentado">Movimentado</option>
+                       <option value="concluído">Concluído</option>
                     </select>
                   </th>
+                  <th className="p-2 border-b border-base-200"></th>
                 </tr>
               )}
             </thead>
@@ -695,11 +728,23 @@ export function RegistoNC() {
                   <td className="p-4 text-[11px] italic font-medium opacity-50 truncate max-w-[120px]">{h.observacoes || "—"}</td>
                   <td className="p-4 text-right w-36">
                     <span 
-                      className={`badge ${h.estadoMovimentacao === 'pendente' ? 'badge-warning' : 'badge-success'} badge-outline font-black text-[9px] h-5 w-24 tracking-tighter uppercase px-0 shadow-sm cursor-pointer hover:bg-base-200 text-center flex justify-center`}
+                      className={`badge ${h.estadoMovimentacao === 'pendente' ? 'badge-warning' : h.estadoMovimentacao === 'movimentado' ? 'badge-info' : 'badge-success'} badge-outline font-black text-[9px] h-5 w-24 tracking-tighter uppercase px-0 shadow-sm cursor-pointer hover:bg-base-200 text-center flex justify-center`}
                       onClick={() => toggleEstado(h.id)}
                     >
                       {h.estadoMovimentacao}
                     </span>
+                  </td>
+                  <td className="p-4 pr-6 text-right w-24">
+                    {h.estadoMovimentacao !== "concluído" && (
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="btn btn-ghost btn-xs btn-circle hover:text-primary hover:bg-primary/10" onClick={() => setEditingRecord({...h})} title="Editar">
+                          <Pencil className="h-3.5 w-3.5"/>
+                        </button>
+                        <button className="btn btn-ghost btn-xs btn-circle hover:text-error hover:bg-error/10" onClick={() => handleDeleteRecord(h.id)} title="Eliminar">
+                          <Trash2 className="h-3.5 w-3.5"/>
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -707,6 +752,64 @@ export function RegistoNC() {
           </table>
         </div>
       </div>
+
+      {/* Edit Record Modal Overlay */}
+      {editingRecord && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-base-300/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-base-100 rounded-3xl shadow-2xl border border-base-200 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-base-200 flex items-center gap-3 bg-base-200/30">
+              <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center"><Pencil className="h-4 w-4"/></div>
+              <div>
+                 <h3 className="font-black uppercase tracking-tight text-sm">Editar Registo NC</h3>
+                 <div className="font-mono text-[10px] opacity-40 font-bold">{editingRecord.id}</div>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Artigo *</label>
+                <ArtigoInput 
+                  value={editingRecord.codigoArtigo} 
+                  onChange={(c, d) => setEditingRecord(v => v ? { ...v, codigoArtigo: c, descricao: d } : null)} 
+                />
+              </div>
+              <div>
+                <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Designação</label>
+                <div className="h-10 px-4 bg-base-200/50 rounded-xl border border-base-300 flex items-center overflow-hidden">
+                  <span className="text-xs font-bold truncate uppercase">{editingRecord.descricao}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Qtd *</label>
+                  <input type="number" className="input input-bordered h-10 w-full font-black text-sm" value={editingRecord.quantidade} onChange={e => setEditingRecord(v => v ? { ...v, quantidade: e.target.value } : null)} />
+                </div>
+                <div>
+                  <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Destino *</label>
+                  <select className="select select-bordered h-10 min-h-0 w-full font-black text-[11px] uppercase p-0 px-2" value={editingRecord.destino} onChange={e => {
+                    const d = DESTINOS.find(x => x.label === e.target.value);
+                    setEditingRecord(v => v ? { ...v, destino: e.target.value, codigoDestino: d?.codigo || "" } : null);
+                  }}>
+                    {DESTINOS.map(d => <option key={d.codigo} value={d.label}>{d.label.toUpperCase()}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Obs.</label>
+                <input className="input input-bordered h-10 w-full text-xs" value={editingRecord.observacoes} onChange={e => setEditingRecord(v => v ? { ...v, observacoes: e.target.value } : null)} />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-base-200/30 border-t border-base-200 flex justify-end gap-3">
+              <button className="btn btn-ghost rounded-xl font-bold text-xs" onClick={() => setEditingRecord(null)}>Cancelar</button>
+              <button className="btn btn-primary rounded-xl font-black text-xs gap-2" onClick={handleSaveEdit}>
+                <CheckCircle className="h-4 w-4"/> Gravar Alterações
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

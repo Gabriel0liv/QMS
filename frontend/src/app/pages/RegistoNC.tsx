@@ -336,7 +336,7 @@ export function RegistoNC() {
   const [view, setView] = useState<"LIST" | "ADD" | "IFRAME_MOBILIDADE" | "IFRAME_CHAO_FABRICA">("LIST");
   const [historico, setHistorico] = useState<HistoricoItem[]>(HISTORICO_INICIAL);
   const [submitted, setSubmitted] = useState(false);
-  const [filters, setFilters] = useState({ data: "", artigo: "", designacao: "", qtd: "", destino: "", obs: "", estado: "" });
+  const [filters, setFilters] = useState({ data: "", artigo: "", designacao: "", qtd: "", qtdOperator: "=", destino: "", obs: "", estado: "" });
   const [showFilters, setShowFilters] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -350,21 +350,26 @@ export function RegistoNC() {
       const matchObs = h.observacoes.toLowerCase().includes(filters.obs.toLowerCase());
       const matchEstado = filters.estado === "" || h.estadoMovimentacao === filters.estado;
 
-      // Quantity Logic with Operators
+      // Quantity Logic with Operator Dropdown
       let matchQtd = true;
       if (filters.qtd.trim() !== "") {
-        const query = filters.qtd.trim();
+        const filterQtd = parseInt(filters.qtd.trim(), 10);
         const itemQtd = parseInt(h.quantidade, 10);
         
-        if (!isNaN(itemQtd)) {
-          if (query.startsWith(">=")) matchQtd = itemQtd >= parseInt(query.substring(2));
-          else if (query.startsWith("<=")) matchQtd = itemQtd <= parseInt(query.substring(2));
-          else if (query.startsWith(">")) matchQtd = itemQtd > parseInt(query.substring(1));
-          else if (query.startsWith("<")) matchQtd = itemQtd < parseInt(query.substring(1));
-          else if (query.startsWith("=")) matchQtd = itemQtd === parseInt(query.substring(1));
-          else matchQtd = h.quantidade.includes(query); // Fallback to string match
+        if (!isNaN(itemQtd) && !isNaN(filterQtd)) {
+          switch (filters.qtdOperator) {
+            case ">": matchQtd = itemQtd > filterQtd; break;
+            case "<": matchQtd = itemQtd < filterQtd; break;
+            case ">=": matchQtd = itemQtd >= filterQtd; break;
+            case "<=": matchQtd = itemQtd <= filterQtd; break;
+            default: matchQtd = itemQtd === filterQtd; break;
+          }
+        } else if (!isNaN(filterQtd)) {
+          // If we typed a number but item isn't, they don't match
+          matchQtd = false;
         } else {
-          matchQtd = h.quantidade.includes(query);
+          // Fallback to text matching if what is typed is not a number
+          matchQtd = h.quantidade.includes(filters.qtd.trim());
         }
       }
 
@@ -630,72 +635,43 @@ export function RegistoNC() {
                 <th className="p-4 border-b border-base-200 text-center w-36"><span className="text-[9px] font-black uppercase tracking-widest opacity-40 block w-full">Estado</span></th>
               </tr>
               {showFilters && (
-                <tr className="bg-base-200/30">
-                  <th className="p-4 border-b border-base-200">
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest opacity-40">data</span>
-                      <div className="relative">
-                        <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100/50 focus:bg-base-100" placeholder="Filtrar..." value={filters.data} onChange={e => setFilters(f => ({ ...f, data: e.target.value }))} />
-                      </div>
+                <tr className="bg-base-200/50">
+                  <th className="p-2 border-b border-base-200">
+                    <input type="text" className="input input-bordered h-8 w-full min-w-[80px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Filtrar por data" value={filters.data} onChange={e => setFilters(f => ({ ...f, data: e.target.value }))} />
+                  </th>
+                  <th className="p-2 border-b border-base-200">
+                    <input type="text" className="input input-bordered h-8 w-full min-w-[80px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Filtrar artigo" value={filters.artigo} onChange={e => setFilters(f => ({ ...f, artigo: e.target.value }))} />
+                  </th>
+                  <th className="p-2 border-b border-base-200">
+                    <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Filtrar desig." value={filters.designacao} onChange={e => setFilters(f => ({ ...f, designacao: e.target.value }))} />
+                  </th>
+                  <th className="p-2 border-b border-base-200">
+                    <div className="flex items-center gap-1">
+                      <select className="h-8 w-10 bg-base-100 border border-base-300 rounded-lg text-center text-[11px] font-black focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer shrink-0 appearance-none" title="Operador" value={filters.qtdOperator} onChange={e => setFilters(f => ({ ...f, qtdOperator: e.target.value }))}>
+                        <option value="=">=</option>
+                        <option value=">">&gt;</option>
+                        <option value="<">&lt;</option>
+                        <option value=">=">&ge;</option>
+                        <option value="<=">&le;</option>
+                      </select>
+                      <input type="number" className="input input-bordered h-8 w-full min-w-[60px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Qtd" value={filters.qtd} onChange={e => setFilters(f => ({ ...f, qtd: e.target.value }))} />
                     </div>
                   </th>
-                  <th className="p-4 border-b border-base-200">
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest opacity-40">artigo</span>
-                      <div className="relative">
-                        <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100/50 focus:bg-base-100" placeholder="Filtrar..." value={filters.artigo} onChange={e => setFilters(f => ({ ...f, artigo: e.target.value }))} />
-                      </div>
-                    </div>
+                  <th className="p-2 border-b border-base-200">
+                    <select className="select select-bordered select-sm h-8 w-full text-[10px] font-bold rounded-lg px-2 bg-base-100" value={filters.destino} onChange={e => setFilters(f => ({ ...f, destino: e.target.value }))} >
+                       <option value="">Todos</option>
+                       {DESTINOS.map(d => <option key={d.label} value={d.label}>{d.label}</option>)}
+                    </select>
                   </th>
-                  <th className="p-4 border-b border-base-200">
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest opacity-40">designacao</span>
-                      <div className="relative">
-                        <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100/50 focus:bg-base-100" placeholder="Filtrar..." value={filters.designacao} onChange={e => setFilters(f => ({ ...f, designacao: e.target.value }))} />
-                      </div>
-                    </div>
+                  <th className="p-2 border-b border-base-200">
+                    <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Procurar texto" value={filters.obs} onChange={e => setFilters(f => ({ ...f, obs: e.target.value }))} />
                   </th>
-                  <th className="p-4 border-b border-base-200">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                         <span className="text-[9px] font-black uppercase tracking-widest opacity-40">qtd</span>
-                         <span className="text-[8px] opacity-30 font-bold" title="Use >, <, >=, <=, ou =">op.</span>
-                      </div>
-                      <div className="relative">
-                        <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100/50 focus:bg-base-100" placeholder="Ex: >10" value={filters.qtd} onChange={e => setFilters(f => ({ ...f, qtd: e.target.value }))} />
-                      </div>
-                    </div>
-                  </th>
-                  <th className="p-4 border-b border-base-200">
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest opacity-40">destino</span>
-                      <div className="relative">
-                        <select className="select select-bordered select-sm h-8 w-full text-[10px] font-bold rounded-lg px-2 bg-base-100/50 focus:bg-base-100" value={filters.destino} onChange={e => setFilters(f => ({ ...f, destino: e.target.value }))} >
-                           <option value="">Todos</option>
-                           {DESTINOS.map(d => <option key={d.label} value={d.label}>{d.label}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                  </th>
-                  <th className="p-4 border-b border-base-200">
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest opacity-40">obs</span>
-                      <div className="relative">
-                        <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100/50 focus:bg-base-100" placeholder="Procurar texto..." value={filters.obs} onChange={e => setFilters(f => ({ ...f, obs: e.target.value }))} />
-                      </div>
-                    </div>
-                  </th>
-                  <th className="p-4 border-b border-base-200 text-center w-36">
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Estado</span>
-                      <div className="relative">
-                        <select className="select select-bordered select-sm h-8 w-full text-[10px] font-bold rounded-lg px-2 bg-base-100/50 focus:bg-base-100 text-center" value={filters.estado} onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))} >
-                           <option value="">Todas</option>
-                           <option value="pendente">Pendente</option>
-                           <option value="movimentado">Movimentado</option>
-                        </select>
-                      </div>
-                    </div>
+                  <th className="p-2 border-b border-base-200 text-center w-36">
+                    <select className="select select-bordered select-sm h-8 w-full text-[10px] font-bold rounded-lg px-2 bg-base-100 text-center" value={filters.estado} onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))} >
+                       <option value="">Todas</option>
+                       <option value="pendente">Pendente</option>
+                       <option value="movimentado">Movimentado</option>
+                    </select>
                   </th>
                 </tr>
               )}

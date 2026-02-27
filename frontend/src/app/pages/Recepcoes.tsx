@@ -1,15 +1,30 @@
 import { useState } from "react";
-import { FileText, CheckCircle, XCircle, Package, Calendar, User } from "lucide-react";
+import { FileText, CheckCircle, XCircle, Package, Calendar, User, AlertTriangle } from "lucide-react";
+
+interface ArtigoRecepcao {
+  codigo: string;
+  descricao: string;
+  quantidade: number;
+  unidade: string;
+}
 
 interface Recepcao {
   id: string;
   numeroRecepcao: string;
   data: string;
   fornecedor: string;
-  material: string;
-  lote: string;
-  quantidade: number;
-  unidade: string;
+  artigos: ArtigoRecepcao[];
+  status: "pendente" | "aprovado" | "rejeitado";
+}
+
+// Representa uma inspeção individual de um artigo de uma receção
+interface InspecaoArtigo {
+  inspecaoId: string;
+  recepcaoId: string;
+  numeroRecepcao: string;
+  data: string;
+  fornecedor: string;
+  artigo: ArtigoRecepcao;
   status: "pendente" | "aprovado" | "rejeitado";
 }
 
@@ -19,10 +34,10 @@ const mockRecepcoes: Recepcao[] = [
     numeroRecepcao: "REC-2026-0423",
     data: "2026-02-26",
     fornecedor: "MetalCast Industries",
-    material: "Alumínio EN AW-6082 T6",
-    lote: "MC-20260223-A",
-    quantidade: 500,
-    unidade: "kg",
+    artigos: [
+      { codigo: "01-77-216", descricao: "CX.7715/16X30 - 92MM CORTADO", quantidade: 300, unidade: "kg" },
+      { codigo: "01-37-001-09", descricao: "ESPELHO 3730 MARCADO", quantidade: 200, unidade: "UN" }
+    ],
     status: "pendente"
   },
   {
@@ -30,10 +45,9 @@ const mockRecepcoes: Recepcao[] = [
     numeroRecepcao: "REC-2026-0422",
     data: "2026-02-26",
     fornecedor: "ZincoPro Ltd",
-    material: "Zinco Zamak-5",
-    lote: "ZP-20260225-B",
-    quantidade: 350,
-    unidade: "kg",
+    artigos: [
+      { codigo: "03-15-049-11", descricao: "TAMPA 1510 VIBRADO (CONES)", quantidade: 350, unidade: "kg" }
+    ],
     status: "pendente"
   },
   {
@@ -41,10 +55,9 @@ const mockRecepcoes: Recepcao[] = [
     numeroRecepcao: "REC-2026-0421",
     data: "2026-02-25",
     fornecedor: "CopperTech SA",
-    material: "Cobre Eletrolítico C11000",
-    lote: "CT-20260224-C",
-    quantidade: 200,
-    unidade: "kg",
+    artigos: [
+      { codigo: "08-AK-003-11", descricao: "PUNHO AAJ100 VIBRADO", quantidade: 200, unidade: "UN" }
+    ],
     status: "pendente"
   },
   {
@@ -52,10 +65,9 @@ const mockRecepcoes: Recepcao[] = [
     numeroRecepcao: "REC-2026-0420",
     data: "2026-02-25",
     fornecedor: "SteelWork International",
-    material: "Aço Inoxidável 316L",
-    lote: "SW-20260224-D",
-    quantidade: 750,
-    unidade: "kg",
+    artigos: [
+      { codigo: "01-77-234-24", descricao: "ESPELHO 7707 PEQ. PONTAS", quantidade: 750, unidade: "UN" }
+    ],
     status: "pendente"
   },
   {
@@ -63,58 +75,35 @@ const mockRecepcoes: Recepcao[] = [
     numeroRecepcao: "REC-2026-0419",
     data: "2026-02-24",
     fornecedor: "MetalCast Industries",
-    material: "Alumínio EN AW-5083",
-    lote: "MC-20260222-E",
-    quantidade: 400,
-    unidade: "kg",
+    artigos: [
+      { codigo: "08-28-040-11", descricao: "PUNHO 2801 VIBRADO (CONES)", quantidade: 400, unidade: "kg" }
+    ],
     status: "pendente"
   }
 ];
 
 export function Recepcoes() {
-  const [selectedRecepcao, setSelectedRecepcao] = useState<Recepcao | null>(null);
-  const [quantidadeAfetada, setQuantidadeAfetada] = useState("");
-  const [defeitoSelecionado, setDefeitoSelecionado] = useState("");
-  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [selectedInspecao, setSelectedInspecao] = useState<InspecaoArtigo | null>(null);
 
-  const defeitosDisponiveis = [
-    "Dimensional fora de especificação",
-    "Acabamento superficial inadequado",
-    "Material incorreto",
-    "Certificação em falta",
-    "Danos de transporte",
-    "Embalagem inadequada",
-    "Identificação incorreta",
-  ];
+  // Flatten the data: one inspection per article
+  const inspecoes: InspecaoArtigo[] = mockRecepcoes.flatMap(recepcao => 
+    recepcao.artigos.map(artigo => ({
+      inspecaoId: `${recepcao.id}-${artigo.codigo}`,
+      recepcaoId: recepcao.id,
+      numeroRecepcao: recepcao.numeroRecepcao,
+      data: recepcao.data,
+      fornecedor: recepcao.fornecedor,
+      artigo: artigo,
+      status: recepcao.status
+    }))
+  );
 
-  // Cálculos de amostragem (mockados baseados na quantidade)
-  const calcularAmostragem = (quantidade: number) => {
-    // Simulação simples: 3% da quantidade, mínimo 10 peças
-    const amostra = Math.max(10, Math.ceil(quantidade * 0.03));
-    const caixas = Math.ceil(amostra / 5); // Aproximadamente 5 peças por caixa
+  const amostragem = selectedInspecao ? (() => {
+    const qty = selectedInspecao.artigo.quantidade;
+    const amostra = Math.max(10, Math.ceil(qty * 0.03));
+    const caixas = Math.ceil(amostra / 5);
     return { amostra, caixas };
-  };
-
-  const handleAprovar = () => {
-    if (!selectedRecepcao) return;
-    alert(`Material APROVADO e disponibilizado para produção\nReceção: ${selectedRecepcao.numeroRecepcao}`);
-    setSelectedRecepcao(null);
-    setShowRejectForm(false);
-  };
-
-  const handleRejeitar = () => {
-    if (!selectedRecepcao || !quantidadeAfetada || !defeitoSelecionado) {
-      alert("Por favor, preencha a quantidade afetada e o tipo de defeito");
-      return;
-    }
-    alert(`Material REJEITADO:\nReceção: ${selectedRecepcao.numeroRecepcao}\nQuantidade Afetada: ${quantidadeAfetada}\nDefeito: ${defeitoSelecionado}\n\nEstado: EM QUARENTENA`);
-    setQuantidadeAfetada("");
-    setDefeitoSelecionado("");
-    setShowRejectForm(false);
-    setSelectedRecepcao(null);
-  };
-
-  const amostragem = selectedRecepcao ? calcularAmostragem(selectedRecepcao.quantidade) : null;
+  })() : null;
 
   return (
     <div className="p-8">
@@ -124,14 +113,14 @@ export function Recepcoes() {
         <p className="text-gray-700 mt-1">Inspeção de Matéria-Prima e Componentes</p>
       </div>
 
-      {!selectedRecepcao ? (
+      {!selectedInspecao ? (
         /* Lista de Receções Não Inspecionadas */
         <div className="card bg-white shadow-lg border border-gray-200">
           <div className="card-body">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Receções Pendentes de Inspeção</h2>
+              <h2 className="text-xl font-bold text-gray-900">Itens Pendentes de Inspeção</h2>
               <span className="inline-flex items-center justify-center min-w-[2rem] h-8 px-2.5 rounded-full bg-red-600 text-white text-sm font-bold shadow-sm">
-                {mockRecepcoes.length}
+                {inspecoes.length}
               </span>
             </div>
 
@@ -140,39 +129,48 @@ export function Recepcoes() {
                 <thead className="bg-blue-50">
                   <tr className="border-b-2 border-blue-200">
                     <th className="text-gray-900 font-bold">Nº Receção</th>
+                    <th className="text-gray-900 font-bold">Artigo</th>
+                    <th className="text-gray-900 font-bold">Descrição</th>
                     <th className="text-gray-900 font-bold">Data</th>
                     <th className="text-gray-900 font-bold">Fornecedor</th>
-                    <th className="text-gray-900 font-bold">Material</th>
-                    <th className="text-gray-900 font-bold">Lote</th>
-                    <th className="text-gray-900 font-bold">Quantidade</th>
+                    <th className="text-gray-900 font-bold">Estado</th>
+                    <th className="text-gray-900 font-bold">Qtd / Unidade</th>
                     <th className="text-gray-900 font-bold">Ação</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {mockRecepcoes.map((recepcao) => (
-                    <tr key={recepcao.id} className="hover:bg-blue-50 border-b border-gray-200">
-                      <td className="font-mono font-semibold text-gray-900">{recepcao.numeroRecepcao}</td>
+                  {inspecoes.map((inspecao) => (
+                    <tr key={inspecao.inspecaoId} className="hover:bg-blue-50 border-b border-gray-200">
+                      <td className="font-mono font-semibold text-gray-900">{inspecao.numeroRecepcao}</td>
+                      <td className="font-mono text-sm text-gray-900">• {inspecao.artigo.codigo}</td>
+                      <td className="text-xs text-gray-700 max-w-xs">{inspecao.artigo.descricao}</td>
                       <td className="text-gray-900">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-500" />
-                          {recepcao.data}
+                          {inspecao.data}
                         </div>
                       </td>
                       <td className="text-gray-900">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-gray-500" />
-                          {recepcao.fornecedor}
+                          {inspecao.fornecedor}
                         </div>
                       </td>
-                      <td className="font-medium text-gray-900">{recepcao.material}</td>
-                      <td className="font-mono text-sm text-gray-900">{recepcao.lote}</td>
+                      <td>
+                        <span className={`badge badge-sm font-bold uppercase ${
+                          inspecao.status === "pendente" ? "badge-warning" : 
+                          inspecao.status === "aprovado" ? "badge-success" : "badge-error"
+                        }`}>
+                          {inspecao.status}
+                        </span>
+                      </td>
                       <td className="text-right text-gray-900">
-                        <span className="font-semibold">{recepcao.quantidade}</span> {recepcao.unidade}
+                        <span className="font-semibold">{inspecao.artigo.quantidade}</span> {inspecao.artigo.unidade}
                       </td>
                       <td>
                         <button
                           className="btn btn-primary btn-sm text-white"
-                          onClick={() => setSelectedRecepcao(recepcao)}
+                          onClick={() => setSelectedInspecao(inspecao)}
                         >
                           <Package className="w-4 h-4" />
                           Inspecionar
@@ -186,26 +184,23 @@ export function Recepcoes() {
           </div>
         </div>
       ) : (
-        /* Detalhes da Receção e Painel de Inspeção */
+        /* Detalhes da Inspecção e Painel de Acção */
         <>
           {/* Material Info Banner */}
           <div className="alert alert-info bg-blue-50 border-2 border-blue-300 mb-6 shadow-md">
             <FileText className="w-6 h-6 text-blue-700" />
             <div className="flex-1">
-              <h3 className="font-bold text-gray-900 text-lg">Receção: {selectedRecepcao.numeroRecepcao}</h3>
+              <h3 className="font-bold text-gray-900 text-lg">Receção: {selectedInspecao.numeroRecepcao}</h3>
               <div className="text-sm text-gray-700 mt-1">
-                <span className="font-semibold">Material:</span> {selectedRecepcao.material} |
-                <span className="font-semibold"> Fornecedor:</span> {selectedRecepcao.fornecedor} |
-                <span className="font-semibold"> Lote:</span> {selectedRecepcao.lote}
+                <span className="font-semibold">Artigo:</span> {selectedInspecao.artigo.codigo} ({selectedInspecao.artigo.descricao}) |
+                <span className="font-semibold"> Qtd:</span> {selectedInspecao.artigo.quantidade} {selectedInspecao.artigo.unidade} |
+                <span className="font-semibold"> Fornecedor:</span> {selectedInspecao.fornecedor}
               </div>
             </div>
             <button
               className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-slate-100 hover:text-gray-900 transition-colors"
               onClick={() => {
-                setSelectedRecepcao(null);
-                setShowRejectForm(false);
-                setQuantidadeAfetada("");
-                setDefeitoSelecionado("");
+                setSelectedInspecao(null);
               }}
             >
               ← Voltar à Lista
@@ -284,80 +279,27 @@ export function Recepcoes() {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
-                  <div className="space-y-3 mb-6">
-                    <button
-                      className="btn btn-success btn-lg w-full text-white"
-                      onClick={handleAprovar}
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      Aprovar
-                    </button>
-                    <button
-                      className="btn btn-error btn-lg w-full text-white"
-                      onClick={() => setShowRejectForm(!showRejectForm)}
-                    >
-                      <XCircle className="w-5 h-5" />
-                      Rejeitar / Quarentena
-                    </button>
-                  </div>
-
-                  {/* Reject Form (conditional) */}
-                  {showRejectForm && (
-                    <div className="bg-red-50 p-4 rounded-lg space-y-4 border-2 border-error">
-                      <h3 className="font-bold text-error text-base">Justificação de Rejeição</h3>
-
-                      <div className="form-control w-full">
-                        <label className="label">
-                          <span className="label-text font-semibold text-gray-900">Quantidade Afetada</span>
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="Ex: 250"
-                          className="input input-bordered w-full bg-white text-gray-900 border-2 border-gray-300"
-                          value={quantidadeAfetada}
-                          onChange={(e) => setQuantidadeAfetada(e.target.value)}
-                          min="1"
-                          max={selectedRecepcao.quantidade}
-                        />
-                      </div>
-
-                      <div className="form-control w-full">
-                        <label className="label">
-                          <span className="label-text font-semibold text-gray-900">Catálogo de Defeitos</span>
-                        </label>
-                        <select
-                          className="select select-bordered w-full bg-white text-gray-900 border-2 border-gray-300"
-                          value={defeitoSelecionado}
-                          onChange={(e) => setDefeitoSelecionado(e.target.value)}
-                        >
-                          <option value="" disabled>Selecione o defeito</option>
-                          {defeitosDisponiveis.map((defeito) => (
-                            <option key={defeito} value={defeito}>{defeito}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button
-                          className="btn btn-ghost btn-sm flex-1 text-gray-900 border-2 border-gray-300"
-                          onClick={() => {
-                            setShowRejectForm(false);
-                            setQuantidadeAfetada("");
-                            setDefeitoSelecionado("");
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          className="btn btn-error btn-sm flex-1 text-white"
-                          onClick={handleRejeitar}
-                        >
-                          Confirmar Rejeição
-                        </button>
+                  {/* X3 Action Panel Notice */}
+                  <div className="space-y-6">
+                    <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="bg-amber-500 p-2 rounded-lg text-white">
+                          <AlertTriangle className="w-6 h-6" />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-bold text-amber-900 uppercase tracking-tight">Continuar operação no X3</h3>
+                          <p className="text-sm text-amber-800 leading-relaxed">
+                            Para concluir esta inspeção, proceda com o registo de <strong>Aprovação</strong> ou <strong>Rejeição</strong> diretamente no <strong>Sage X3</strong>.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  )}
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-800 flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse shrink-0"></div>
+                      A plataforma Sage AI está sincronizada para monitorização, mas a decisão final é externa.
+                    </div>
+                  </div>
 
                   {/* Instructions */}
                   <div className="divider"></div>

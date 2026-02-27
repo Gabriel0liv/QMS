@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { MainLayout }        from "./components/MainLayout";
-import { ChaoFabrica }       from "./pages/ChaoFabrica";
+import { RegistoNC }         from "./pages/RegistoNC";
 import { Recepcoes }          from "./pages/Recepcoes";
 import { DocumentosTecnicos } from "./pages/DocumentosTecnicos";
 import { Retrabalho }         from "./pages/Retrabalho";
@@ -15,8 +15,8 @@ export const router = createBrowserRouter([
     path: "/",
     Component: MainLayout,
     children: [
-      { index: true,             element: <Navigate to="/chao-fabrica" replace /> },
-      { path: "chao-fabrica",        Component: ChaoFabrica },
+      { index: true,             element: <Navigate to="/registo-nc" replace /> },
+      { path: "registo-nc",          Component: RegistoNC },
       { path: "recepcoes",           Component: Recepcoes },
       { path: "documentos-tecnicos", Component: DocumentosTecnicos },
       { path: "retrabalho",          Component: Retrabalho },

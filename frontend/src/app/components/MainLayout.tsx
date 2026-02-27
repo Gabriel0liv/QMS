@@ -14,7 +14,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { to: "/chao-fabrica", label: "Chão de Fábrica", icon: Factory, roles: ["operator"] },
+    { to: "/registo-nc", label: "Registo NC", icon: Factory, roles: ["operator"] },
     { to: "/recepcoes", label: "Receções", icon: Package, roles: ["quality"] },
     { to: "/retrabalho", label: "Retrabalho", icon: Wrench, roles: ["quality"] },
     { to: "/catalogo-defeitos", label: "Catálogo de Defeitos", icon: Tag, roles: ["quality"] },

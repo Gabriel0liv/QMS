@@ -8,7 +8,7 @@ import { AuthLayout } from './components/AuthLayout';
 function useHomeRoute(): string {
   const { user } = useAuth();
   switch (user?.role) {
-    case "operator": return "/chao-fabrica";
+    case "operator": return "/registo-nc";
     case "quality": return "/recepcoes";
     case "production": return "/documentos-tecnicos";
     case "rd": return "/documentos-tecnicos";

@@ -91,13 +91,13 @@ Dentro da pasta `frontend`, tem acesso aos seguintes comandos principais:
 
 ## Configurar os Links do Chão de Fábrica e Mobilidade
 
-Na página de **Registo NC**, os botões "Abrir Mobilidade" e "Abrir Chão de Fábrica" carregam páginas externas dentro da aplicação através de _Iframes_. Atualmente as hiperligações de demonstração estão a apontar para a Wikipédia.
+Na página de **Registo NC**, os links para "Mobilidade" e "Chão de Fábrica" carregam páginas externas dentro da aplicação através de _Iframes_. Estes atalhos estão disponíveis no **menu lateral principal (Sidebar)** para utilizadores com o perfil de Operador. Atualmente as hiperligações de demonstração estão a apontar para a Wikipédia e GitHub.
 
-Para configurar as suas próprias hiperligações:
+Para alterar os URLs de destino:
 
-1. Abra o ficheiro `frontend/src/app/pages/RegistoNC.tsx` no seu editor.
-2. Procure pela tag `<iframe>` (aproximadamente na linha 469, ou pesquise por _"IFRAME_MOBILIDADE"_).
-3. Modifique os URLs na propriedade `src` para os endereços das suas aplicações internas.
+1. O local onde as páginas são **carregadas** (**a tag `<iframe>`**) continua no ficheiro `frontend/src/app/pages/RegistoNC.tsx` (aproximadamente na linha 511). É **aí que altera** o `src` com os links da aplicação: `src={view === "IFRAME_MOBILIDADE" ? "http://192..." : "http://200..."}`.
+2. Nota de navegação: Os items no menu lateral que disparam estas janelas estão definidos no `frontend/src/app/components/MainLayout.tsx` (na constante `NAV_ITEMS`), enviando as _flags_ `?view=mobilidade` pelo URL.
+3. Certifique-se que coloca o protocolo correto (ex: `http://` ou `https://`) antes do IP no passo 1.
 
 ### Funcionamento em Redes Locais (Intranet)
 

@@ -90,6 +90,14 @@ const HISTORICO_INICIAL: HistoricoItem[] = [
   { id: "h6", data: "24/02/2026 08:30", codigoArtigo: "08-VE-001-76",  descricao: "PUNHO VELA PRETO 9005-SAV",      quantidade: "3",  destino: "Decapar",  codigoDestino: "CQT01", observacoes: "Rebarbas", estadoMovimentacao: "concluído" },
 ];
 
+// Fallback for ID generation since crypto.randomUUID is only available in secure contexts (HTTPS/localhost)
+const generateId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
 // ── Components ─────────────────────────────────────────────────────────────
 
 function ArtigoInput({ value, onChange }: { value: string; onChange: (code: string, desc: string) => void }) {
@@ -169,7 +177,7 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
     if (editId) {
       setRows(r => r.map(x => x.id === editId ? { ...draft, id: editId } : x));
     } else {
-      setRows(r => [...r, { ...draft, id: crypto.randomUUID() }]);
+      setRows(r => [...r, { ...draft, id: generateId() }]);
     }
     setDraft({ codigoArtigo: "", descricao: "", quantidade: "", destino: "", codigoDestino: "", observacoes: "" });
     setEditId(null);
@@ -399,7 +407,7 @@ export function RegistoNC() {
       ...r,
       data: now,
       estadoMovimentacao: "pendente",
-      id: crypto.randomUUID()
+      id: generateId()
     }));
     setHistorico(h => [...items, ...h]);
     setSubmitted(true);

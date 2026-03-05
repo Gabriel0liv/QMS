@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Plus, Trash2, Pencil, Send, X, Clock, CheckCircle, AlertTriangle, Search, List, LayoutGrid, Filter, ArrowLeft, ChevronRight, ChevronLeft, MonitorSmartphone, Factory } from "lucide-react";
+import { Plus, Trash2, Pencil, Send, X, Clock, CheckCircle, AlertTriangle, Search, List, LayoutGrid, Filter, ArrowLeft, ChevronRight, ChevronLeft, MonitorSmartphone, Factory, Undo2 } from "lucide-react";
 import { useSearchParams } from "react-router";
 
 // ── constant data (unchanged) ─────────────────────────────────────────────
@@ -81,6 +81,15 @@ interface HistoricoItem {
   estadoMovimentacao: "pendente" | "movimentado" | "concluído";
 }
 
+interface DraftState {
+  codigoArtigo: string;
+  descricao: string;
+  quantidade: string;
+  destino: string;
+  codigoDestino: string;
+  observacoes: string;
+}
+
 const HISTORICO_INICIAL: HistoricoItem[] = [
   { id: "h1", data: "26/02/2026 10:42", codigoArtigo: "08-AK-003-11",  descricao: "PUNHO AAJ100 VIBRADO",            quantidade: "12", destino: "Derreter", codigoDestino: "CR001", observacoes: "Porosidade", estadoMovimentacao: "pendente" },
   { id: "h2", data: "26/02/2026 10:42", codigoArtigo: "03-15-412-11",  descricao: "CORPO (INT.) 1520 VIBRADO",        quantidade: "5",  destino: "Derreter", codigoDestino: "CR001", observacoes: "", estadoMovimentacao: "pendente" },
@@ -90,7 +99,6 @@ const HISTORICO_INICIAL: HistoricoItem[] = [
   { id: "h6", data: "24/02/2026 08:30", codigoArtigo: "08-VE-001-76",  descricao: "PUNHO VELA PRETO 9005-SAV",      quantidade: "3",  destino: "Decapar",  codigoDestino: "CQT01", observacoes: "Rebarbas", estadoMovimentacao: "concluído" },
 ];
 
-// Fallback for ID generation since crypto.randomUUID is only available in secure contexts (HTTPS/localhost)
 const generateId = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -144,7 +152,7 @@ function ArtigoInput({ value, onChange }: { value: string; onChange: (code: stri
                 type="button"
                 className="w-full text-left px-4 py-2.5 hover:bg-primary hover:text-primary-content transition-colors flex flex-col border-b border-base-100 last:border-0"
                 onMouseDown={(e) => {
-                  e.preventDefault(); // Prevents input onBlur from firing before selection
+                  e.preventDefault();
                   onChange(m, ARTIGOS[m].descricao);
                   setQuery(m);
                   setOpen(false);
@@ -161,13 +169,30 @@ function ArtigoInput({ value, onChange }: { value: string; onChange: (code: stri
   );
 }
 
-// ── Registration View (Sub-component for isolation) ─────────────────────────
-function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: (items: NCRow[]) => void }) {
+function RegistrationView({ onSave, onBack }: { onSave: (items: NCRow[]) => void; onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<"form" | "list">("form");
-  const [rows, setRows] = useState<NCRow[]>([]);
-  const [draft, setDraft] = useState({ codigoArtigo: "", descricao: "", quantidade: "", destino: "", codigoDestino: "", observacoes: "" });
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  
+  const [rows, setRows] = useState<NCRow[]>(() => {
+    const saved = localStorage.getItem("nc_draft_rows");
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [draft, setDraft] = useState<DraftState>(() => {
+    const saved = localStorage.getItem("nc_draft_fields");
+    return saved ? JSON.parse(saved) : { codigoArtigo: "", descricao: "", quantidade: "", destino: "", codigoDestino: "", observacoes: "" };
+  });
+
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("nc_draft_rows", JSON.stringify(rows));
+  }, [rows]);
+
+  useEffect(() => {
+    localStorage.setItem("nc_draft_fields", JSON.stringify(draft));
+  }, [draft]);
 
   const handleAdd = () => {
     if (!draft.codigoArtigo || !draft.quantidade || !draft.destino) {
@@ -175,9 +200,9 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
       return;
     }
     if (editId) {
-      setRows(r => r.map(x => x.id === editId ? { ...draft, id: editId } : x));
+      setRows((r: NCRow[]) => r.map(x => x.id === editId ? { ...draft, id: editId } : x));
     } else {
-      setRows(r => [...r, { ...draft, id: generateId() }]);
+      setRows((r: NCRow[]) => [...r, { ...draft, id: generateId() }]);
     }
     setDraft({ codigoArtigo: "", descricao: "", quantidade: "", destino: "", codigoDestino: "", observacoes: "" });
     setEditId(null);
@@ -185,12 +210,32 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
     if (window.innerWidth < 768) setActiveTab("list");
   };
 
+  const clearPersistence = () => {
+    localStorage.removeItem("nc_draft_rows");
+    localStorage.removeItem("nc_draft_fields");
+  };
+
+  const handleCancel = () => {
+    if (rows.length > 0 || draft.codigoArtigo) {
+      setShowCancelModal(true);
+    } else {
+       onBack();
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    setRows([]);
+    setDraft({ codigoArtigo: "", descricao: "", quantidade: "", destino: "", codigoDestino: "", observacoes: "" });
+    clearPersistence();
+    setShowCancelModal(false);
+    onBack();
+  };
+
   return (
     <div className="flex flex-col h-full bg-base-100 rounded-3xl overflow-hidden shadow-xl border border-base-200 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* View Header */}
-      <div className="px-6 py-5 border-b border-base-200 flex items-center justify-between bg-base-100">
+      <div className="px-6 py-5 border-b border-base-200 flex items-center justify-between bg-base-100/50 backdrop-blur-md sticky top-0 z-10">
         <div className="flex items-center gap-4">
-          <button className="btn btn-ghost btn-sm btn-circle" onClick={onCancel}><ArrowLeft className="h-5 w-5"/></button>
+          <div className="p-2 bg-primary/10 rounded-lg text-primary"><Factory className="h-5 w-5"/></div>
           <div>
             <h2 className="text-lg font-black uppercase tracking-tight">Novo Registo NC</h2>
             <div className="flex items-center gap-2 text-[10px] font-black opacity-40 uppercase tracking-widest">
@@ -200,13 +245,17 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
             </div>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-2 bg-base-200/50 px-3 py-1.5 rounded-full">
-           <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
-           <span className="text-[10px] font-black uppercase opacity-60">Sessão Activa</span>
+        <div className="flex items-center gap-2">
+           <button className="btn btn-ghost btn-sm gap-2 font-black uppercase text-[10px] rounded-lg tracking-widest opacity-60 hover:opacity-100" onClick={onBack}>
+             <ArrowLeft className="h-3.5 w-3.5"/> Voltar
+           </button>
+           <div className="hidden md:flex items-center gap-2 bg-base-200/50 px-3 py-1.5 rounded-full ml-2">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+              <span className="text-[10px] font-black uppercase opacity-60">Poupado Automático</span>
+           </div>
         </div>
       </div>
 
-      {/* Tabs (Mobile Only) */}
       <div className="md:hidden flex p-1 bg-base-200 mx-4 mt-4 rounded-xl">
         <button className={`flex-1 py-2 text-xs font-black uppercase rounded-lg transition-all ${activeTab === "form" ? "bg-base-100 shadow-sm text-primary" : "opacity-40"}`} onClick={() => setActiveTab("form")}>Formulário</button>
         <button className={`flex-1 py-2 text-xs font-black uppercase rounded-lg transition-all ${activeTab === "list" ? "bg-base-100 shadow-sm text-primary" : "opacity-40"}`} onClick={() => setActiveTab("list")}>Lista ({rows.length})</button>
@@ -214,8 +263,6 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
         <div className="max-w-6xl mx-auto space-y-8">
-          
-          {/* Form Section */}
           <div className={`${activeTab === "list" ? "hidden md:block" : "block"} space-y-4`}>
             <div className="flex items-center justify-between">
               <h3 className="text-[11px] font-black uppercase tracking-widest opacity-30 flex items-center gap-2 px-1">
@@ -228,24 +275,24 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 bg-base-200/20 rounded-2xl border border-base-200/50">
               <div className="md:col-span-1">
                 <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Artigo *</label>
-                <ArtigoInput value={draft.codigoArtigo} onChange={(c, d) => setDraft(v => ({ ...v, codigoArtigo: c, descricao: d }))} />
+                <ArtigoInput value={draft.codigoArtigo} onChange={(c, d) => setDraft((v: DraftState) => ({ ...v, codigoArtigo: c, descricao: d }))} />
               </div>
               <div className="md:col-span-1">
-                <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Designação</label>
-                <div className="h-10 px-4 bg-base-200/50 rounded-xl border border-base-300 flex items-center overflow-hidden">
-                  <span className="text-xs font-bold truncate uppercase">{draft.descricao || <span className="opacity-20 font-normal italic">Auto-preenchido...</span>}</span>
-                </div>
+                 <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Designação</label>
+                 <div className="h-10 px-4 bg-base-200/50 rounded-xl border border-base-300 flex items-center overflow-hidden">
+                   <span className="text-xs font-bold truncate uppercase">{draft.descricao || <span className="opacity-20 font-normal italic">Auto-preenchido...</span>}</span>
+                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Qtd *</label>
-                  <input type="number" className="input input-bordered h-10 w-full font-black text-sm" value={draft.quantidade} onChange={e => setDraft(v => ({ ...v, quantidade: e.target.value }))} placeholder="0" />
+                  <input type="number" min="0" className="input input-bordered h-10 w-full font-black text-sm" value={draft.quantidade} onChange={e => setDraft((v: DraftState) => ({ ...v, quantidade: e.target.value }))} placeholder="0" />
                 </div>
                 <div>
                   <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Destino *</label>
                   <select className="select select-bordered h-10 min-h-0 w-full font-black text-[11px] uppercase p-0 px-2" value={draft.destino} onChange={e => {
                     const d = DESTINOS.find(x => x.label === e.target.value);
-                    setDraft(v => ({ ...v, destino: e.target.value, codigoDestino: d?.codigo || "" }));
+                    setDraft((v: DraftState) => ({ ...v, destino: e.target.value, codigoDestino: d?.codigo || "" }));
                   }}>
                     <option value="" disabled>ESCOLHER...</option>
                     {DESTINOS.map(d => <option key={d.codigo} value={d.label}>{d.label.toUpperCase()}</option>)}
@@ -255,7 +302,7 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
               <div className="flex items-end gap-3">
                 <div className="flex-1">
                   <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Obs.</label>
-                  <input className="input input-bordered h-10 w-full text-xs" value={draft.observacoes} onChange={e => setDraft(v => ({ ...v, observacoes: e.target.value }))} placeholder="..." />
+                  <input className="input input-bordered h-10 w-full text-xs" value={draft.observacoes} onChange={e => setDraft((v: DraftState) => ({ ...v, observacoes: e.target.value }))} placeholder="..." />
                 </div>
                 <button className="btn btn-secondary h-10 min-h-0 px-6 rounded-xl shadow-lg shadow-secondary/20" onClick={handleAdd}>
                   <Plus className="h-4 w-4"/>
@@ -266,7 +313,6 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
             {error && <div className="p-3 bg-error/10 text-error text-[10px] font-black rounded-lg uppercase flex items-center gap-2"><AlertTriangle className="h-3.5 w-3.5"/>{error}</div>}
           </div>
 
-          {/* List Section */}
           <div className={`${activeTab === "form" ? "hidden md:block" : "block"} space-y-4 pb-12`}>
             <h3 className="text-[11px] font-black uppercase tracking-widest opacity-30 flex items-center gap-2 px-1">
               <List className="h-3.5 w-3.5"/>
@@ -305,7 +351,7 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
                         <td className="text-right pr-4">
                           <div className="flex justify-end gap-1">
                             <button className="btn btn-ghost btn-xs btn-circle hover:text-primary" onClick={() => { setDraft({...r}); setEditId(r.id); setActiveTab("form"); }}><Pencil className="h-3 w-3"/></button>
-                            <button className="btn btn-ghost btn-xs btn-circle hover:text-error" onClick={() => setRows(prev => prev.filter(x => x.id !== r.id))}><Trash2 className="h-3 w-3"/></button>
+                            <button className="btn btn-ghost btn-xs btn-circle hover:text-error" onClick={() => setRows((prev: NCRow[]) => prev.filter(x => x.id !== r.id))}><Trash2 className="h-3 w-3"/></button>
                           </div>
                         </td>
                       </tr>
@@ -318,44 +364,113 @@ function RegistrationView({ onCancel, onSave }: { onCancel: () => void, onSave: 
         </div>
       </div>
 
-      {/* View Footer */}
-      <div className="px-8 py-5 border-t border-base-200 bg-base-100 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="px-8 py-5 border-t border-base-200 bg-base-100/80 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="hidden md:flex items-center gap-3">
            <div className={`h-2.5 w-2.5 rounded-full ${rows.length > 0 ? "bg-success" : "bg-base-200"}`}></div>
-           <span className="text-[11px] font-black opacity-40 uppercase tracking-widest">{rows.length} registos preparados para envio</span>
+           <span className="text-[11px] font-black opacity-40 uppercase tracking-widest">{rows.length} registos preparados</span>
         </div>
         <div className="flex w-full md:w-auto gap-4">
-          <button className="btn btn-ghost h-12 min-h-0 px-8 rounded-xl font-black uppercase text-xs flex-1 md:flex-initial" onClick={onCancel}>Cancelar</button>
+          <button 
+            className="btn btn-ghost h-12 min-h-0 px-6 rounded-xl gap-2 font-black text-xs uppercase tracking-widest text-error hover:bg-error/10 flex-1 md:flex-initial"
+            onClick={handleCancel}
+          >
+            <Trash2 className="h-4 w-4"/>
+            Cancelar
+          </button>
           <button 
             className="btn btn-primary h-12 min-h-0 px-10 rounded-xl gap-3 shadow-xl shadow-primary/20 flex-1 md:flex-initial"
             disabled={rows.length === 0}
-            onClick={() => onSave(rows)}
+            onClick={() => {
+              onSave(rows);
+              setRows([]);
+              clearPersistence();
+            }}
           >
             <Send className="h-4 w-4"/>
             <span className="font-black text-xs uppercase tracking-widest">Enviar Registos ({rows.length})</span>
           </button>
         </div>
       </div>
+
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-base-300/60">
+          <div className="bg-base-100 rounded-[3rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-base-200 w-full max-w-lg overflow-hidden">
+            <div className="p-10 text-center space-y-6">
+              <div className="h-24 w-24 bg-error/10 text-error rounded-[2rem] flex items-center justify-center mx-auto shadow-inner mb-2">
+                <AlertTriangle className="h-12 w-12"/>
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-2xl font-black uppercase tracking-tight">Cancelar Rascunho?</h3>
+                <p className="text-sm font-bold opacity-60 px-4 leading-relaxed">
+                  Tem a certeza que deseja cancelar?
+                  <br/>
+                  <span className="text-error mt-2 block">Todos os registos manuais inseridos neste rascunho serão apagados.</span>
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 p-6 gap-4 bg-base-200/50 border-t border-base-200">
+              <button 
+                className="btn btn-ghost h-20 text-sm font-black uppercase tracking-widest rounded-3xl hover:bg-base-300 active:scale-95" 
+                onClick={() => setShowCancelModal(false)}
+              >
+                Manter
+              </button>
+              <button 
+                className="btn btn-error h-20 text-sm font-black uppercase tracking-widest rounded-3xl shadow-xl shadow-error/20 active:scale-95" 
+                onClick={handleConfirmCancel}
+              >
+                Apagar Registos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Main Controller ────────────────────────────────────────────────────────
 export function RegistoNC() {
   const [searchParams, setSearchParams] = useSearchParams();
   const viewParam = searchParams.get("view");
-  const view = viewParam === "mobilidade" ? "IFRAME_MOBILIDADE" : viewParam === "chao_fabrica" ? "IFRAME_CHAO_FABRICA" : viewParam === "add" ? "ADD" : "LIST";
   
-  const setView = (v: "LIST" | "ADD" | "IFRAME_MOBILIDADE" | "IFRAME_CHAO_FABRICA") => {
-    if (v === "LIST") setSearchParams({});
-    else if (v === "IFRAME_MOBILIDADE") setSearchParams({ view: "mobilidade" });
-    else if (v === "IFRAME_CHAO_FABRICA") setSearchParams({ view: "chao_fabrica" });
-    else if (v === "ADD") setSearchParams({ view: "add" });
+  // Logic to determine initial view based on param or last saved view
+  const getInitialView = () => {
+    if (viewParam === "mobilidade") return "IFRAME_MOBILIDADE";
+    if (viewParam === "chao_fabrica") return "IFRAME_CHAO_FAB_VIEW";
+    if (viewParam === "add") return "ADD";
+    if (!viewParam) {
+      const last = localStorage.getItem("nc_last_active_view");
+      if (last === "ADD") return "ADD";
+    }
+    return "LIST";
+  };
+
+  const [currentView, setCurrentView] = useState<"LIST" | "ADD" | "IFRAME_MOBILIDADE" | "IFRAME_CHAO_FAB_VIEW" | null>(null);
+
+  // Initialize view and handle persistence
+  useEffect(() => {
+    const v = getInitialView();
+    setCurrentView(v);
+  }, [viewParam]);
+
+  const setView = (v: "LIST" | "ADD" | "IFRAME_MOBILIDADE" | "IFRAME_CHAO_FAB_VIEW") => {
+    setCurrentView(v);
+    if (v === "LIST") {
+      setSearchParams({});
+      localStorage.setItem("nc_last_active_view", "LIST");
+    } else if (v === "ADD") {
+      setSearchParams({ view: "add" });
+      localStorage.setItem("nc_last_active_view", "ADD");
+    } else if (v === "IFRAME_MOBILIDADE") {
+      setSearchParams({ view: "mobilidade" });
+    } else if (v === "IFRAME_CHAO_FAB_VIEW") {
+      setSearchParams({ view: "chao_fabrica" });
+    }
   };
 
   const [historico, setHistorico] = useState<HistoricoItem[]>(HISTORICO_INICIAL);
   const [submitted, setSubmitted] = useState(false);
-  const [filters, setFilters] = useState({ data: "", artigo: "", designacao: "", qtd: "", qtdOperator: "=", destino: "", obs: "", estado: "" });
+  const [filters, setFilters] = useState({ data: "", dataOperator: "=", artigo: "", designacao: "", qtd: "", qtdOperator: "=", destino: "", obs: "", estado: "" });
   const [showFilters, setShowFilters] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [editingRecord, setEditingRecord] = useState<HistoricoItem | null>(null);
@@ -366,20 +481,26 @@ export function RegistoNC() {
 
   const filteredHistory = useMemo(() => {
     return historico.filter(h => {
-      // Basic text matches
-      const matchData = h.data.toLowerCase().includes(filters.data.toLowerCase());
+      let matchData = true;
+      if (filters.data) {
+         const itemParts = h.data.split(" ")[0].split("/");
+         if (itemParts.length === 3) {
+           const itemDateStr = `${itemParts[2]}-${itemParts[1]}-${itemParts[0]}`;
+           if (filters.dataOperator === ">") matchData = itemDateStr > filters.data;
+           else if (filters.dataOperator === "<") matchData = itemDateStr < filters.data;
+           else matchData = itemDateStr === filters.data;
+         }
+      }
       const matchArtigo = h.codigoArtigo.toLowerCase().includes(filters.artigo.toLowerCase());
       const matchDesignacao = h.descricao.toLowerCase().includes(filters.designacao.toLowerCase());
       const matchDestino = h.destino.toLowerCase().includes(filters.destino.toLowerCase());
       const matchObs = h.observacoes.toLowerCase().includes(filters.obs.toLowerCase());
       const matchEstado = filters.estado === "" || h.estadoMovimentacao === filters.estado;
 
-      // Quantity Logic with Operator Dropdown
       let matchQtd = true;
       if (filters.qtd.trim() !== "") {
         const filterQtd = parseInt(filters.qtd.trim(), 10);
         const itemQtd = parseInt(h.quantidade, 10);
-        
         if (!isNaN(itemQtd) && !isNaN(filterQtd)) {
           switch (filters.qtdOperator) {
             case ">": matchQtd = itemQtd > filterQtd; break;
@@ -388,27 +509,16 @@ export function RegistoNC() {
             case "<=": matchQtd = itemQtd <= filterQtd; break;
             default: matchQtd = itemQtd === filterQtd; break;
           }
-        } else if (!isNaN(filterQtd)) {
-          // If we typed a number but item isn't, they don't match
-          matchQtd = false;
-        } else {
-          // Fallback to text matching if what is typed is not a number
-          matchQtd = h.quantidade.includes(filters.qtd.trim());
-        }
+        } else if (!isNaN(filterQtd)) matchQtd = false;
+        else matchQtd = h.quantidade.includes(filters.qtd.trim());
       }
-
       return matchData && matchArtigo && matchDesignacao && matchDestino && matchObs && matchEstado && matchQtd;
     });
   }, [historico, filters]);
 
   const handleSave = (newRows: NCRow[]) => {
     const now = new Date().toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" });
-    const items: HistoricoItem[] = newRows.map(r => ({
-      ...r,
-      data: now,
-      estadoMovimentacao: "pendente",
-      id: generateId()
-    }));
+    const items: HistoricoItem[] = newRows.map(r => ({ ...r, data: now, estadoMovimentacao: "pendente", id: generateId() }));
     setHistorico(h => [...items, ...h]);
     setSubmitted(true);
     setView("LIST");
@@ -416,9 +526,9 @@ export function RegistoNC() {
   };
 
   const toggleEstado = (id: string) => {
-    setHistorico(prev => prev.map(h => {
+    setHistorico((prev: HistoricoItem[]) => prev.map(h => {
       if (h.id === id) {
-        if (h.estadoMovimentacao === "concluído") return h; // Não muda o estado concluído se não for pela Qualidade
+        if (h.estadoMovimentacao === "concluído") return h;
         return { ...h, estadoMovimentacao: h.estadoMovimentacao === "pendente" ? "movimentado" : "pendente" };
       }
       return h;
@@ -427,391 +537,239 @@ export function RegistoNC() {
 
   const handleDeleteRecord = (id: string) => {
     if (confirm("Tem a certeza que deseja eliminar este registo?")) {
-      setHistorico(prev => prev.filter(h => h.id !== id));
+      setHistorico((prev: HistoricoItem[]) => prev.filter(h => h.id !== id));
     }
   };
 
   const handleSaveEdit = () => {
     if (editingRecord) {
-      setHistorico(prev => prev.map(h => h.id === editingRecord.id ? editingRecord : h));
+      setHistorico((prev: HistoricoItem[]) => prev.map(h => h.id === editingRecord.id ? editingRecord : h));
       setEditingRecord(null);
     }
   };
 
-  if (view === "ADD") {
-    return (
-      <div className="p-4 md:p-8 h-screen max-h-screen">
-        <RegistrationView onCancel={() => setView("LIST")} onSave={handleSave} />
-      </div>
-    );
-  }
+  const currentItem = filteredHistory[currentIndex];
 
-  if (view === "IFRAME_MOBILIDADE" || view === "IFRAME_CHAO_FABRICA") {
-    const currentItem = filteredHistory[currentIndex];
-    
-    return (
-      <div className="flex" style={{ height: "calc(100vh - 64px)" }}>
-        {/* Sidebar */}
-        <div className="w-16 md:w-20 bg-base-100 border-r border-base-200 flex flex-col items-center py-4 gap-4 flex-shrink-0 z-50 shadow-sm relative">
-          <button 
-            className="btn btn-ghost btn-circle w-12 h-12 flex items-center justify-center text-base-content/50 hover:text-primary hover:bg-primary/10 transition-colors"
-            onClick={() => setView("LIST")}
-            title="Voltar ao Ecrã Normal"
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </button>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0 h-full">
-          {/* Top Bar (Single Row Navigation) */}
-          {currentItem ? (
-            <div className="bg-base-100 border-b border-base-200 shadow-sm p-2 flex items-center justify-between z-10 shrink-0 h-20">
-              <div className="flex items-center gap-1 md:gap-4 flex-1 min-w-0">
-                <button 
-                  className="btn btn-ghost btn-circle btn-sm"
-                  onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-                  disabled={currentIndex === 0}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                
-                {/* Item Details */}
-                <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 items-center px-2">
-                  <div className="hidden md:block">
-                    <div className="text-[9px] uppercase font-black opacity-40">Data / Hora</div>
-                    <div className="text-xs font-mono font-bold truncate">{currentItem.data}</div>
-                  </div>
-                  <div className="col-span-1 border-r border-base-200 pr-2 md:border-none md:pr-0">
-                    <div className="text-[9px] uppercase font-black opacity-40">Artigo</div>
-                    <div className="text-xs font-black text-primary truncate" title={currentItem.codigoArtigo}>{currentItem.codigoArtigo}</div>
-                  </div>
-                  <div className="col-span-1 hidden md:block">
-                    <div className="text-[9px] uppercase font-black opacity-40">Designação</div>
-                    <div className="text-xs font-bold opacity-80 truncate" title={currentItem.descricao}>{currentItem.descricao}</div>
-                  </div>
-                  <div className="col-span-1">
-                    <div className="text-[9px] uppercase font-black opacity-40">Quantidade</div>
-                    <div className="text-xs font-black truncate">{currentItem.quantidade} UN</div>
-                  </div>
-                  <div className="col-span-2 md:col-span-1">
-                    <div className="text-[9px] uppercase font-black opacity-40">Destino</div>
-                    <div className="text-xs font-bold truncate" title={`${currentItem.destino} (${currentItem.codigoDestino})`}>
-                      {currentItem.destino} <span className="opacity-40 font-mono hidden xl:inline">({currentItem.codigoDestino})</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Status Toggle */}
-                <div className="pr-2 md:pr-4 flex flex-col items-center justify-center border-l border-base-200 pl-4 h-full w-28 md:w-36 shrink-0">
-                  <span className="text-[9px] uppercase font-black opacity-40 mb-1">Estado</span>
-                  <button 
-                    className={`badge ${currentItem.estadoMovimentacao === "pendente" ? "badge-warning" : "badge-success"} font-black text-[10px] h-6 w-full cursor-pointer hover:opacity-80 transition-all uppercase border-0`}
-                    onClick={() => toggleEstado(currentItem.id)}
-                    title="Clique para alterar o estado"
-                  >
-                    {currentItem.estadoMovimentacao}
-                  </button>
-                </div>
-
-                <button 
-                  className="btn btn-ghost btn-circle btn-sm"
-                  onClick={() => setCurrentIndex(prev => Math.min(filteredHistory.length - 1, prev + 1))}
-                  disabled={currentIndex === filteredHistory.length - 1}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
+  const IframeHeader = () => (
+    currentItem ? (
+      <div className="bg-base-100 border-b border-base-200 shadow-sm p-2 flex items-center justify-between z-10 shrink-0 h-20">
+        <div className="flex items-center gap-1 md:gap-4 flex-1 min-w-0">
+          <button className="btn btn-ghost btn-circle btn-sm" onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))} disabled={currentIndex === 0}><ChevronLeft className="h-5 w-5" /></button>
+          <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 items-center px-2">
+            <div className="hidden md:block">
+              <div className="text-[9px] uppercase font-black opacity-40">Data / Hora</div>
+              <div className="text-xs font-mono font-bold truncate">{currentItem.data}</div>
             </div>
-          ) : (
-            <div className="bg-base-100 border-b border-base-200 p-4 shrink-0 flex items-center justify-center text-sm font-bold opacity-50 h-20">
-              Nenhum registo disponível ou filtros demasiado restritivos.
+            <div>
+              <div className="text-[9px] uppercase font-black opacity-40">Artigo</div>
+              <div className="text-xs font-black text-primary truncate">{currentItem.codigoArtigo}</div>
             </div>
-          )}
-
-          {/* Iframe Area */}
-          <div className="flex-1 bg-white relative">
-            <iframe 
-              src={view === "IFRAME_MOBILIDADE" ? "https://github.com/" : "https://pt.wikipedia.org/wiki/Portal:Engenharia"} 
-              className="absolute inset-0 w-full h-full border-0"
-              title="External System View"
-            />
+            <div className="hidden md:block">
+              <div className="text-[9px] uppercase font-black opacity-40">Designação</div>
+              <div className="text-xs font-bold opacity-80 truncate">{currentItem.descricao}</div>
+            </div>
+            <div>
+              <div className="text-[9px] uppercase font-black opacity-40">Qtd</div>
+              <div className="text-xs font-black truncate">{currentItem.quantidade} UN</div>
+            </div>
+            <div>
+              <div className="text-[9px] uppercase font-black opacity-40">Destino</div>
+              <div className="text-xs font-bold truncate">{currentItem.destino}</div>
+            </div>
           </div>
+          <div className="pr-2 border-l border-base-200 pl-4 h-full flex flex-col items-center justify-center w-28 md:w-36">
+            <span className="text-[9px] uppercase font-black opacity-40 mb-1">Estado</span>
+            <button className={`badge ${currentItem.estadoMovimentacao === "pendente" ? "badge-warning" : "badge-success"} font-black text-[10px] h-6 w-full uppercase border-0 cursor-pointer`} onClick={() => toggleEstado(currentItem.id)}>
+              {currentItem.estadoMovimentacao}
+            </button>
+          </div>
+          <button className="btn btn-ghost btn-circle btn-sm" onClick={() => setCurrentIndex(prev => Math.min(filteredHistory.length - 1, prev + 1))} disabled={currentIndex === filteredHistory.length - 1}><ChevronRight className="h-5 w-5" /></button>
         </div>
       </div>
-    );
-  }
+    ) : (
+      <div className="bg-base-100 border-b border-base-200 p-4 shrink-0 flex items-center justify-center text-sm font-bold opacity-50 h-20">
+        Nenhum registo disponível ou filtros demasiado restritivos.
+      </div>
+    )
+  );
 
   return (
-    <div className="p-4 lg:p-10 max-w-[1500px] mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="h-[calc(100vh-64px)] w-full flex flex-col bg-base-100 overflow-hidden lg:h-screen">
       
-      {/* Header */}
-      <div className="flex items-center justify-between gap-6 flex-wrap">
-        <div className="flex items-center gap-5">
-          <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/30 rotate-3">
-             <LayoutGrid className="h-7 w-7 text-primary-content" />
+      {/* ── LIST VIEW ── */}
+      <div className={`flex-1 overflow-y-auto p-4 lg:p-10 ${currentView === "LIST" ? "block" : "hidden"}`}>
+        <div className="max-w-[1500px] mx-auto space-y-8 animate-in fade-in duration-500">
+          <div className="flex items-center justify-between gap-6 flex-wrap">
+            <div className="flex items-center gap-5">
+              <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/30 rotate-3">
+                 <Factory className="h-7 w-7 text-primary-content" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-black tracking-tighter uppercase">Registo Produto Não Conforme</h1>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-[10px] font-black uppercase text-base-content/40 tracking-widest">Controlo de Qualidade</span>
+                  <div className="h-1 w-1 rounded-full bg-base-content/20"></div>
+                  <span className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-1.5"><Clock className="h-3 w-3"/> HISTÓRICO GLOBAL</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-black tracking-tighter uppercase">Registo Produto Não Conforme</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <span className="text-[10px] font-black uppercase text-base-content/40 tracking-widest">Controlo de Qualidade</span>
-              <div className="h-1 w-1 rounded-full bg-base-content/20"></div>
-              <span className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-1.5">
-                <Clock className="h-3 w-3"/> HISTÓRICO GLOBAL
-              </span>
+
+          {submitted && <div className="alert alert-success py-4 font-black text-xs uppercase animate-in slide-in-from-top-4"><CheckCircle className="h-5 w-5"/> Registos enviados com sucesso!</div>}
+
+          <div className="bg-base-100 rounded-[2.5rem] border border-base-200 shadow-xl overflow-hidden">
+            <div className="px-8 py-6 border-b border-base-200 flex items-center justify-between">
+              <h2 className="text-sm font-black uppercase tracking-widest opacity-40 flex items-center gap-3"><List className="h-4 w-4"/> Visão Geral</h2>
+              <div className="flex items-center gap-3">
+                <button className={`btn h-10 min-h-0 px-4 rounded-xl ${showFilters ? 'btn-primary shadow-lg shadow-primary/20' : 'btn-ghost'}`} onClick={() => setShowFilters(!showFilters)}>
+                  <Filter className="h-4 w-4" />
+                  <span className="text-xs font-black uppercase tracking-widest leading-none mt-0.5">Filtros</span>
+                </button>
+                <button className="btn btn-primary h-10 min-h-0 rounded-xl gap-2 px-6 shadow-xl shadow-primary/20" onClick={() => setView("ADD")}>
+                  <Plus className="h-4 w-4"/>
+                  <span className="font-black uppercase tracking-widest text-xs leading-none mt-0.5">Registar NC</span>
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="table table-zebra w-full border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-base-200/30">
+                    <th className="p-4"><span className="text-[9px] font-black uppercase opacity-40">Data</span></th>
+                    <th className="p-4"><span className="text-[9px] font-black uppercase opacity-40">Artigo</span></th>
+                    <th className="p-4"><span className="text-[9px] font-black uppercase opacity-40">Designação</span></th>
+                    <th className="p-4 text-center"><span className="text-[9px] font-black uppercase opacity-40">Qtd</span></th>
+                    <th className="p-4"><span className="text-[9px] font-black uppercase opacity-40">Destino</span></th>
+                    <th className="p-4 text-center w-36"><span className="text-[9px] font-black uppercase opacity-40 block w-full">Estado</span></th>
+                    <th className="p-4 w-24"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistory.map(h => (
+                    <tr key={h.id} className="hover:bg-primary/5 transition-colors group">
+                      <td className="p-4 font-mono text-[11px] opacity-40">{h.data}</td>
+                      <td className="p-4 font-mono text-sm font-black text-primary">{h.codigoArtigo}</td>
+                      <td className="p-4 text-xs font-bold opacity-80 uppercase truncate max-w-xs">{h.descricao}</td>
+                      <td className="p-4 text-center text-sm font-black">{h.quantidade}</td>
+                      <td className="p-4 text-xs font-black uppercase">{h.destino}</td>
+                      <td className="p-4 text-right w-36"><button className={`badge ${h.estadoMovimentacao === 'pendente' ? 'badge-warning' : h.estadoMovimentacao === 'movimentado' ? 'badge-info' : 'badge-success'} badge-outline font-black text-[9px] h-5 w-24 uppercase cursor-pointer text-center flex justify-center`} onClick={() => toggleEstado(h.id)}>{h.estadoMovimentacao}</button></td>
+                      <td className="p-4 pr-6 text-right w-24"><div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button className="btn btn-ghost btn-xs btn-circle hover:text-primary" onClick={() => setEditingRecord({...h})}><Pencil className="h-3.5 w-3.5"/></button><button className="btn btn-ghost btn-xs btn-circle hover:text-error" onClick={() => handleDeleteRecord(h.id)}><Trash2 className="h-3.5 w-3.5"/></button></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0">
-          <button 
-            className="btn btn-primary btn-md rounded-xl shadow-lg shadow-primary/20 gap-2 px-6 group transition-transform active:scale-95 whitespace-nowrap"
-            onClick={() => setView("ADD")}
-          >
-            <Plus className="h-4 w-4 transition-transform group-hover:rotate-90"/>
-            <span className="font-black uppercase tracking-widest text-xs">Registar NC</span>
-          </button>
-        </div>
       </div>
 
-      {submitted && (
-        <div className="alert alert-success shadow-sm rounded-2xl border-0 py-4 font-black text-xs uppercase tracking-widest animate-in slide-in-from-top-4">
-          <CheckCircle className="h-5 w-5"/> Registos enviados com sucesso e adicionados ao histórico!
+      {/* ── ADD VIEW ── */}
+      <div className={`flex-1 overflow-y-auto p-4 md:p-8 ${currentView === "ADD" ? "block" : "hidden"}`}>
+        <RegistrationView onSave={handleSave} onBack={() => setView("LIST")} />
+      </div>
+
+      {/* ── IFRAME MOBILIDADE ── */}
+      <div className={`flex-1 flex flex-col ${currentView === "IFRAME_MOBILIDADE" ? "flex" : "hidden"}`}>
+         <IframeHeader />
+         <div className="flex-1 bg-white relative">
+            <iframe src="https://github.com/" className="absolute inset-0 w-full h-full border-0" title="Mobilidade" />
+         </div>
+      </div>
+
+      {/* ── IFRAME CHAO FABRICA ── */}
+      <div className={`flex-1 flex flex-col ${currentView === "IFRAME_CHAO_FAB_VIEW" ? "flex" : "hidden"}`}>
+         <IframeHeader />
+         <div className="flex-1 bg-white relative">
+            <iframe src="https://pt.wikipedia.org/wiki/Portal:Engenharia" className="absolute inset-0 w-full h-full border-0" title="Chao de Fabrica" />
+         </div>
+      </div>
+
+      {/* ── EDIT OVERLAY ── */}
+      {editingRecord && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-base-300/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-base-100 rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
+             <h3 className="font-black uppercase text-sm">Editar Registo de NC</h3>
+             <div className="space-y-4 pt-2">
+                <ArtigoInput value={editingRecord.codigoArtigo} onChange={(c, d) => setEditingRecord((v: HistoricoItem | null) => v ? ({...v, codigoArtigo: c, descricao: d}) : null)} />
+                <input type="number" min="0" className="input input-bordered w-full font-black" value={editingRecord.quantidade} onChange={e => setEditingRecord((v: HistoricoItem | null) => v ? ({...v, quantidade: e.target.value}) : null)} />
+                <select className="select select-bordered w-full" value={editingRecord.destino} onChange={e => setEditingRecord((v: HistoricoItem | null) => v ? ({...v, destino: e.target.value}) : null)} >
+                  {DESTINOS.map(d => <option key={d.codigo} value={d.label}>{d.label.toUpperCase()}</option>)}
+                </select>
+                <div className="flex gap-3 pt-4"><button className="btn btn-ghost flex-1 font-black" onClick={() => setEditingRecord(null)}>CANCELAR</button><button className="btn btn-primary flex-1 font-black" onClick={handleSaveEdit}>GRAVAR</button></div>
+             </div>
+          </div>
         </div>
       )}
-
-      {/* History Card */}
-      <div className="bg-base-100 rounded-[2.5rem] border border-base-200 shadow-xl overflow-hidden">
-        <div className="px-8 py-6 border-b border-base-200 flex items-center justify-between">
-            <h2 className="text-sm font-black uppercase tracking-widest opacity-40 flex items-center gap-3">
-               <List className="h-4 w-4"/>
-               Visão Geral de Não-Conformidades
-            </h2>
-            <div className="flex items-center gap-4">
-               <button 
-                 className={`btn btn-sm rounded-lg flex items-center gap-2 ${showFilters ? 'btn-primary' : 'btn-ghost'}`}
-                 onClick={() => setShowFilters(!showFilters)}
-               >
-                 <Filter className="h-3 w-3" />
-                 <span className="text-[10px] font-black uppercase tracking-widest">Filtros Avançados</span>
-               </button>
-               <div className="items-center gap-2 border-l border-base-200 pl-4 hidden md:flex">
-                 <span className="text-[10px] font-black uppercase opacity-20 tracking-tighter">Filtros Activos:</span>
-                 <div className={`h-2 w-2 rounded-full shadow-sm ${Object.values(filters).some(v => v !== "") ? 'bg-primary' : 'bg-base-300'}`}></div>
-               </div>
-            </div>
-        </div>
-        
-        {/* Mobile View: Cards (Hidden on Large Screens) */}
-        <div className="lg:hidden divide-y divide-base-200">
-          {filteredHistory.length === 0 ? (
-            <div className="py-20 text-center opacity-20 flex flex-col items-center gap-2">
-              <Search className="h-10 w-10"/>
-              <span className="text-[10px] font-black uppercase tracking-widest">Nenhum resultado</span>
-            </div>
-          ) : filteredHistory.map(h => (
-            <div key={h.id} className="p-5 space-y-4 bg-base-100 hover:bg-primary/5 transition-colors">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <div className="text-[10px] font-black opacity-30 uppercase tracking-widest font-mono">{h.data}</div>
-                  <div className="font-mono text-base font-black text-primary">{h.codigoArtigo}</div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className={`badge ${h.estadoMovimentacao === 'pendente' ? 'badge-warning' : h.estadoMovimentacao === 'movimentado' ? 'badge-info' : 'badge-success'} badge-outline font-black text-[9px] h-5 tracking-tighter uppercase px-3 cursor-pointer`} onClick={() => toggleEstado(h.id)}>
-                    {h.estadoMovimentacao}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="text-xs font-bold opacity-80 uppercase leading-relaxed">{h.descricao}</div>
-              
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="bg-base-200/30 p-3 rounded-xl">
-                  <div className="text-[8px] font-black uppercase opacity-40 mb-1">Quantidade</div>
-                  <div className="text-sm font-black">{h.quantidade} UN</div>
-                </div>
-                <div className="bg-base-200/30 p-3 rounded-xl">
-                  <div className="text-[8px] font-black uppercase opacity-40 mb-1">Destino</div>
-                  <div className="flex items-center gap-1.5 overflow-hidden">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0"></div>
-                    <span className="text-[10px] font-black uppercase truncate">{h.destino}</span>
-                    <span className="text-[8px] opacity-30 font-mono">({h.codigoDestino})</span>
-                  </div>
-                </div>
-              </div>
-
-              {h.observacoes && (
-                <div className="text-[11px] italic font-medium opacity-50 bg-base-200/20 p-3 rounded-xl border border-base-200/50">
-                  "{h.observacoes}"
-                </div>
-              )}
-
-              {h.estadoMovimentacao !== "concluído" && (
-                <div className="flex justify-end gap-2 pt-2 border-t border-base-200/50 mt-2">
-                  <button className="btn btn-ghost btn-sm btn-circle hover:text-primary hover:bg-primary/10" onClick={() => setEditingRecord({...h})}>
-                    <Pencil className="h-4 w-4"/>
-                  </button>
-                  <button className="btn btn-ghost btn-sm btn-circle hover:text-error hover:bg-error/10" onClick={() => handleDeleteRecord(h.id)}>
-                    <Trash2 className="h-4 w-4"/>
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop View: Table (Visible on Large Screens) */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="table table-zebra w-full border-separate border-spacing-0">
-            <thead>
-              <tr className="bg-base-200/30">
-                <th className="p-4 border-b border-base-200"><span className="text-[9px] font-black uppercase tracking-widest opacity-40">Data</span></th>
-                <th className="p-4 border-b border-base-200"><span className="text-[9px] font-black uppercase tracking-widest opacity-40">Artigo</span></th>
-                <th className="p-4 border-b border-base-200"><span className="text-[9px] font-black uppercase tracking-widest opacity-40">Designação</span></th>
-                <th className="p-4 border-b border-base-200"><span className="text-[9px] font-black uppercase tracking-widest opacity-40">Quantidade</span></th>
-                <th className="p-4 border-b border-base-200"><span className="text-[9px] font-black uppercase tracking-widest opacity-40">Destino</span></th>
-                <th className="p-4 border-b border-base-200"><span className="text-[9px] font-black uppercase tracking-widest opacity-40">Observações</span></th>
-                <th className="p-4 border-b border-base-200 text-center w-36"><span className="text-[9px] font-black uppercase tracking-widest opacity-40 block w-full">Estado</span></th>
-                <th className="p-4 border-b border-base-200 w-24"></th>
-              </tr>
-              {showFilters && (
-                <tr className="bg-base-200/50">
-                  <th className="p-2 border-b border-base-200">
-                    <input type="text" className="input input-bordered h-8 w-full min-w-[80px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Filtrar por data" value={filters.data} onChange={e => setFilters(f => ({ ...f, data: e.target.value }))} />
-                  </th>
-                  <th className="p-2 border-b border-base-200">
-                    <input type="text" className="input input-bordered h-8 w-full min-w-[80px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Filtrar artigo" value={filters.artigo} onChange={e => setFilters(f => ({ ...f, artigo: e.target.value }))} />
-                  </th>
-                  <th className="p-2 border-b border-base-200">
-                    <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Filtrar desig." value={filters.designacao} onChange={e => setFilters(f => ({ ...f, designacao: e.target.value }))} />
-                  </th>
-                  <th className="p-2 border-b border-base-200">
-                    <div className="flex items-center gap-1">
-                      <select className="h-8 w-10 bg-base-100 border border-base-300 rounded-lg text-center text-[11px] font-black focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer shrink-0 appearance-none" title="Operador" value={filters.qtdOperator} onChange={e => setFilters(f => ({ ...f, qtdOperator: e.target.value }))}>
-                        <option value="=">=</option>
-                        <option value=">">&gt;</option>
-                        <option value="<">&lt;</option>
-                        <option value=">=">&ge;</option>
-                        <option value="<=">&le;</option>
-                      </select>
-                      <input type="number" className="input input-bordered h-8 w-full min-w-[60px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Qtd" value={filters.qtd} onChange={e => setFilters(f => ({ ...f, qtd: e.target.value }))} />
-                    </div>
-                  </th>
-                  <th className="p-2 border-b border-base-200">
-                    <select className="select select-bordered select-sm h-8 w-full text-[10px] font-bold rounded-lg px-2 bg-base-100" value={filters.destino} onChange={e => setFilters(f => ({ ...f, destino: e.target.value }))} >
-                       <option value="">Todos</option>
-                       {DESTINOS.map(d => <option key={d.label} value={d.label}>{d.label}</option>)}
-                    </select>
-                  </th>
-                  <th className="p-2 border-b border-base-200">
-                    <input type="text" className="input input-bordered h-8 w-full min-w-[100px] text-[10px] font-bold rounded-lg px-2 bg-base-100" placeholder="Procurar texto" value={filters.obs} onChange={e => setFilters(f => ({ ...f, obs: e.target.value }))} />
-                  </th>
-                  <th className="p-2 border-b border-base-200 text-center w-36">
-                    <select className="select select-bordered select-sm h-8 w-full text-[10px] font-bold rounded-lg px-2 bg-base-100 text-center" value={filters.estado} onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))} >
-                       <option value="">Todas</option>
-                       <option value="pendente">Pendente</option>
-                       <option value="movimentado">Movimentado</option>
-                       <option value="concluído">Concluído</option>
-                    </select>
-                  </th>
-                  <th className="p-2 border-b border-base-200"></th>
-                </tr>
-              )}
-            </thead>
-            <tbody>
-              {filteredHistory.length === 0 ? (
-                <tr><td colSpan={7} className="py-24 text-center"><div className="flex flex-col items-center gap-2 opacity-20"><Search className="h-10 w-10"/><span className="text-[10px] font-black uppercase tracking-widest">Nenhum resultado</span></div></td></tr>
-              ) : filteredHistory.map(h => (
-                <tr key={h.id} className="hover:bg-primary/5 transition-colors group">
-                  <td className="p-4 font-mono text-[11px] opacity-40 font-bold">{h.data}</td>
-                  <td className="p-4 font-mono text-sm font-black text-primary">{h.codigoArtigo}</td>
-                  <td className="p-4 text-xs font-bold opacity-80 uppercase max-w-xs truncate">{h.descricao}</td>
-                  <td className="p-4 text-center text-sm font-black">{h.quantidade}</td>
-                  <td className="p-4 text-xs font-black uppercase">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-base-content/20"></div>
-                      {h.destino}
-                      <span className="text-[9px] opacity-20 font-mono tracking-tighter">({h.codigoDestino})</span>
-                    </div>
-                  </td>
-                  <td className="p-4 text-[11px] italic font-medium opacity-50 truncate max-w-[120px]">{h.observacoes || "—"}</td>
-                  <td className="p-4 text-right w-36">
-                    <span 
-                      className={`badge ${h.estadoMovimentacao === 'pendente' ? 'badge-warning' : h.estadoMovimentacao === 'movimentado' ? 'badge-info' : 'badge-success'} badge-outline font-black text-[9px] h-5 w-24 tracking-tighter uppercase px-0 shadow-sm cursor-pointer hover:bg-base-200 text-center flex justify-center`}
-                      onClick={() => toggleEstado(h.id)}
-                    >
-                      {h.estadoMovimentacao}
-                    </span>
-                  </td>
-                  <td className="p-4 pr-6 text-right w-24">
-                    {h.estadoMovimentacao !== "concluído" && (
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="btn btn-ghost btn-xs btn-circle hover:text-primary hover:bg-primary/10" onClick={() => setEditingRecord({...h})} title="Editar">
-                          <Pencil className="h-3.5 w-3.5"/>
-                        </button>
-                        <button className="btn btn-ghost btn-xs btn-circle hover:text-error hover:bg-error/10" onClick={() => handleDeleteRecord(h.id)} title="Eliminar">
-                          <Trash2 className="h-3.5 w-3.5"/>
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Edit Record Modal Overlay */}
-      {editingRecord && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-base-300/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-base-100 rounded-3xl shadow-2xl border border-base-200 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-base-200 flex items-center gap-3 bg-base-200/30">
-              <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center"><Pencil className="h-4 w-4"/></div>
-              <div>
-                 <h3 className="font-black uppercase tracking-tight text-sm">Editar Registo NC</h3>
-                 <div className="font-mono text-[10px] opacity-40 font-bold">{editingRecord.id}</div>
-              </div>
+      {/* ── FILTER MODAL ── */}
+      {showFilters && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-base-300/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-base-100 rounded-3xl w-full max-w-lg shadow-[0_32px_128px_-32px_rgba(0,0,0,0.4)] border border-base-200 flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-base-200 flex items-center justify-between">
+              <h3 className="font-black uppercase flex items-center gap-2 tracking-tight"><Filter className="h-5 w-5"/> Filtros de Pesquisa</h3>
+              <button className="btn btn-ghost btn-circle btn-sm hover:bg-base-200" onClick={() => setShowFilters(false)}><X className="h-4 w-4"/></button>
             </div>
             
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Artigo *</label>
-                <ArtigoInput 
-                  value={editingRecord.codigoArtigo} 
-                  onChange={(c, d) => setEditingRecord(v => v ? { ...v, codigoArtigo: c, descricao: d } : null)} 
-                />
-              </div>
-              <div>
-                <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Designação</label>
-                <div className="h-10 px-4 bg-base-200/50 rounded-xl border border-base-300 flex items-center overflow-hidden">
-                  <span className="text-xs font-bold truncate uppercase">{editingRecord.descricao}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Qtd *</label>
-                  <input type="number" className="input input-bordered h-10 w-full font-black text-sm" value={editingRecord.quantidade} onChange={e => setEditingRecord(v => v ? { ...v, quantidade: e.target.value } : null)} />
-                </div>
-                <div>
-                  <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Destino *</label>
-                  <select className="select select-bordered h-10 min-h-0 w-full font-black text-[11px] uppercase p-0 px-2" value={editingRecord.destino} onChange={e => {
-                    const d = DESTINOS.find(x => x.label === e.target.value);
-                    setEditingRecord(v => v ? { ...v, destino: e.target.value, codigoDestino: d?.codigo || "" } : null);
-                  }}>
-                    {DESTINOS.map(d => <option key={d.codigo} value={d.label}>{d.label.toUpperCase()}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="label py-0 mb-1 text-[10px] font-black uppercase opacity-60">Obs.</label>
-                <input className="input input-bordered h-10 w-full text-xs" value={editingRecord.observacoes} onChange={e => setEditingRecord(v => v ? { ...v, observacoes: e.target.value } : null)} />
-              </div>
+            <div className="p-6 overflow-y-auto space-y-6">
+               <div>
+                  <label className="label py-0 mb-1.5 text-[10px] font-black uppercase opacity-60 tracking-widest">Data Registo <span className="text-primary">*</span></label>
+                  <div className="flex gap-2">
+                    <select className="select select-bordered text-sm font-black w-32 bg-base-100" value={filters.dataOperator} onChange={e => setFilters({...filters, dataOperator: e.target.value})}>
+                      <option value="=">NO DIA (=)</option>
+                      <option value=">">APÓS (&gt;)</option>
+                      <option value="<">ANTES (&lt;)</option>
+                    </select>
+                    <input type="date" className="input input-bordered flex-1 text-sm font-bold uppercase" value={filters.data} onChange={e => setFilters({...filters, data: e.target.value})} />
+                  </div>
+               </div>
+               
+               <div>
+                  <label className="label py-0 mb-1.5 text-[10px] font-black uppercase opacity-60 tracking-widest">Artigo</label>
+                  <ArtigoInput value={filters.artigo} onChange={(c, d) => setFilters({...filters, artigo: c, designacao: d || filters.designacao})} />
+               </div>
+
+               <div>
+                  <label className="label py-0 mb-1.5 text-[10px] font-black uppercase opacity-60 tracking-widest">Designação Livre</label>
+                  <input type="text" className="input input-bordered w-full uppercase text-sm" value={filters.designacao} onChange={e => setFilters({...filters, designacao: e.target.value})} placeholder="Parte do texto..." />
+               </div>
+
+               <div>
+                  <label className="label py-0 mb-1.5 text-[10px] font-black uppercase opacity-60 tracking-widest">Quantidade</label>
+                  <div className="flex gap-2">
+                    <select className="select select-bordered text-sm font-black w-32 bg-base-100" value={filters.qtdOperator} onChange={e => setFilters({...filters, qtdOperator: e.target.value})}>
+                      <option value="=">IGUAL (=)</option>
+                      <option value=">">MAIOR (&gt;)</option>
+                      <option value="<">MENOR (&lt;)</option>
+                    </select>
+                    <input type="number" min="0" className="input input-bordered flex-1 text-sm font-bold" value={filters.qtd} onChange={e => setFilters({...filters, qtd: e.target.value})} placeholder="Qtd..." />
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label py-0 mb-1.5 text-[10px] font-black uppercase opacity-60 tracking-widest">Destino</label>
+                    <select className="select select-bordered w-full uppercase text-sm font-bold bg-base-100" value={filters.destino} onChange={e => setFilters({...filters, destino: e.target.value})}>
+                      <option value="">TODOS OS DESTINOS</option>
+                      {DESTINOS.map(d => <option key={d.codigo} value={d.label}>{d.label.toUpperCase()}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label py-0 mb-1.5 text-[10px] font-black uppercase opacity-60 tracking-widest">Estado</label>
+                    <select className="select select-bordered w-full uppercase text-sm font-bold bg-base-100" value={filters.estado} onChange={e => setFilters({...filters, estado: e.target.value})}>
+                      <option value="">TODOS OS ESTADOS</option>
+                      <option value="pendente">PENDENTE</option>
+                      <option value="movimentado">MOVIMENTADO</option>
+                      <option value="concluído">CONCLUÍDO</option>
+                    </select>
+                  </div>
+               </div>
             </div>
 
-            <div className="px-6 py-4 bg-base-200/30 border-t border-base-200 flex justify-end gap-3">
-              <button className="btn btn-ghost rounded-xl font-bold text-xs" onClick={() => setEditingRecord(null)}>Cancelar</button>
-              <button className="btn btn-primary rounded-xl font-black text-xs gap-2" onClick={handleSaveEdit}>
-                <CheckCircle className="h-4 w-4"/> Gravar Alterações
+            <div className="p-6 border-t border-base-200 flex gap-4">
+              <button className="btn btn-ghost flex-1 font-black uppercase tracking-[0.2em] text-[10px]" onClick={() => setFilters({ data: "", dataOperator: "=", artigo: "", designacao: "", qtd: "", qtdOperator: "=", destino: "", obs: "", estado: "" })}>
+                Limpar
+              </button>
+              <button className="btn btn-primary flex-1 font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-primary/20" onClick={() => setShowFilters(false)}>
+                Aplicar Filtros
               </button>
             </div>
           </div>

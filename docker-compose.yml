@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:15
+    container_name: qms_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-qms_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - qms-net
+
+  backend:
+    build:
+      context: ./backend
+    container_name: qms_backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Database=${POSTGRES_DB:-qms_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5001:8080"
+    volumes:
+      - ./data:/app/dados
+    depends_on:
+      - db
+    networks:
+      - qms-net
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: qms_frontend
+    ports:
+      - "5173:5173"
+    stdin_open: true
+    tty: true
+    networks:
+      - qms-net
+
+networks:
+  qms-net:
+    name: qms-network
+
+volumes:
+  postgres_data:

@@ -1,0 +1,213 @@
+﻿AE01;Máquina de Embalar 1;ina;15APA
+AE02;Máquina de Embalar 2;ina;15APA
+BA01;Balança 1;ina;08SUB
+BA02;Balança 2;ina;01BAL
+BB01;Balancé c/Alimentador 1;" ";01BAL
+BB02;Balancé c/Alimentador 2;" ";01BAL
+BB03;Balancé 3;" ";01BAL
+BB04;Balancé 4;" ";01BAL
+BB05;Balancé 5;" ";02DOB
+BB06;Balancé 6;" ";01BAL
+BB07;Balancé 7;" ";01BAL
+BB08;Balancé 8;" ";01BAL
+BC09;Máquina de calandrar 1;ina;01BAL
+BG11;Guincho 1;ina;01BAL
+BP10;Máquina de Perfilar 1;ina;01BAL
+BP13;Prensa;" ";01BAL
+CC01;"Máquina de Cravar Coordenadas ";" ";04CRA
+CC02;Máquina de Cravar 2;" ";04CRA
+CC03;Máquina de Cravar 3;" ";04CRA
+COORD;Coordenador de rede;ina;99TST
+DB05;Balancé 12;ina;02DOB
+DB06;Balancé 13;" ";02DOB
+DB07;MAQUINA DE CARIMBAR;ina;02DOB
+DB08;Balancé 15;" ";02DOB
+DB09;"MAQUINA DE CRAVAR CAIXAS ";ina;02DOB
+DC01;MAQUINA DE CRAVAR;" ";02DOB
+DE19;Linha de Embalagem Dobradiças;" ";02DOB
+DE20;Linha de Embalar (Ensacar auto;" ";02DOB
+DE21;Linha Embalar dobradicas;ina;02DOB
+DF01;Máquina Furar/Roscar 8;" ";02DOB
+DF02;Máquina Furar/Roscar 9;ina;02DOB
+DF03;Máquina Furar/Roscar 10;ina;02DOB
+DF04;Máquina Furar/Roscar 11;ina;02DOB
+DF05;Máquina Furar/Roscar 12;ina;02DOB
+DL14;Linha de Lavar 1;ina;02DOB
+DL15;Linha de Anodizar 1;" ";02DOB
+DM16;Bancada Manual Dobradicas;ina;02DOB
+DM17;ina Linha de Montagem Dob 7100;" ";02DOB
+DM18;ina Linha de Montagem Dob 1;" ";02DOB
+DM19;ina Bancada Dobradiças;ina;02DOB
+DR01;Máquina Roscar 1;" ";02DOB
+DR02;Máquina Roscar 2;ina;02DOB
+DR03;Máquina Roscar 3;ina;02DOB
+DR04;Máquina Roscar 4;" ";02DOB
+DS09;Serrote Universal 1;" ";02DOB
+DS10;Serrote Universal 2;" ";02DOB
+DS11;Serrote Universal 3;" ";02DOB
+DS12;Serrote (Máquina Automática de;" ";02DOB
+DS13;"Serrote Bancada 5 ";ina;02DOB
+DV21;Máquina de Vibrar;" ";02DOB
+EC01;ina Montar mola+lingua;ina;07ECO
+EC02;Tambor 1;" ";07ECO
+EC03;Prensa 1;" ";07ECO
+EE01;Máq. de Embalar 2 (Ens.Acess.);" ";10EMB
+EE02;Máq. de Embalar 3 (Cintar);" ";10EMB
+EE03;Máq. de Embalar 4 (Retrátil);" ";10EMB
+EE04;ina Máquina de Embalar 5;ina;10EMB
+EE05;Máq. de Embalar 6 (Agrafador);" ";10EMB
+EE06;ina Linha manual Montar/ensa;ina;10EMB
+EE07;Linha Manual Acessorios;" ";10EMB
+EE08;ina Linha Manual Fechaduras;ina;10EMB
+ES06;Máquina de soldar 1 (sacos plá;" ";10EMB
+FA16;Máquina de Aparar Punções e Ex;ina;14FER
+FC13;Compressor de Parafuso 1;ina;14FER
+FC17;"Centro de maquinação 1 ";ina;14FER
+FE02;Erosão por Penetração 1;ina;14FER
+FE08;Máquina de Esmerilar 1;ina;14FER
+FF01;Fresadora Universal 1;" ";06FRR
+FF03;Máquina Furar/Roscar 7;" ";14FER
+FF18;Fresadora Universal 2;ina;14FER
+FG19;Máquina Gravação por Pontos;ina;14FER
+FL06;Serrote de Fita Horizontal 1;ina;14FER
+FL07;Máquina de Lixar Radial 2;ina;14FER
+FR01;Máquina Furar/Roscar 1;" ";06FRR
+FR02;Máquina Furar/Roscar 2;" ";06FRR
+FR03;Máquina Furar/Roscar 3;" ";06FRR
+FR04;Máquina Furar/Roscar 4;" ";06FRR
+FR11;Máquina de Rectificar Superfíc;ina;14FER
+FR12;Máquina de Rectificar Superfíc;ina;14FER
+FS05;Serra de Fita Vertical 1;ina;14FER
+FS09;Máquina de Soldadura MIG 1;ina;14FER
+FS10;Máquina de Soldadura de Eléctr;ina;14FER
+FS14;Serrote Circular;ina;14FER
+FS15;Serrote de Fita Horizontal 2;ina;14FER
+FT04;Máquina do Torno Mecânico 1;ina;14FER
+IA01;Máquina Injecção Aluminio 1;" ";03INJ
+IA02;"Máquina Injecção Aluminio 2 ";ina;03INJ
+IA07;ina Máquina de Injectar Alu;ina;03INJ
+IA13;ina Maq Aliuminio 2;ina;03INJ
+IC11;Compressor (móvel 1);ina;03INJ
+IL09;"Máquina de Lavar 2 ";ina;03INJ
+IM10;Moinho para Plástico;ina;03INJ
+IP01;Máquina de Injectar Plástico 1;" ";03INJ
+IP02;Máquina de Injectar Plástico 3;ina;03INJ
+IR08;Ponte Rolante 1;ina;03INJ
+IR12;Ponte Rolante 2 (Plásticos);ina;03INJ
+IZ01;Máquina de Injectar Zamak Nº1;" ";03INJ
+IZ02;Máquina de Injectar Zamak Nº2;" ";03INJ
+IZ03;Máquina de Injectar Zamak Nº3;" ";03INJ
+IZ04;Máquina de Injectar Zamak Nº4;" ";03INJ
+IZ05;ina Máquina de injectar zamack;ina;03INJ
+IZ06;ina Máquina de injectar zamack;ina;03INJ
+LA01;Linha de Acessórios 1;" ";11LAC
+LA02;Linha de Acessórios 2;" ";11LAC
+LA02/3P;Linha de Acessórios 2 c/3P;ina;11LAC
+LA03;Linha de Acessórios 3;" ";11LAC
+LF01;Linha de Fechaduras 1 (Fech. 1;" ";12LFE
+LF02;Linha de Fechaduras 2 (Fech. 3;" ";12LFE
+LF03;Linha de Fechaduras 3 (Fech. 1;" ";12LFE
+LF04;Linha de Fechaduras 4 (1 pt);" ";12LFE
+LF05;Linha de Fechaduras 5 (Fech. 1;" ";12LFE
+LX01;Máquina de Lixar Plana 1;" ";16LIX
+LX02;Máquina de Lixar Radial 1;" ";16LIX
+LX04;Máquina de Lavar 1;ina;16LIX
+LX05;Máquina de Abrilhantar 1;" ";16LIX
+LX06;Máquina de Secar 1;ina;16LIX
+MD16;Linha Montagem Dobradiças;ina;02DOB
+MM01;Máquina Manual;" ";19MOB
+MO01;INATIVA MOD Balancés 1ºlinha;ina;01BAL
+MO02;INATIVA MOD Dobradiças 1P;ina;02DOB
+MO03;"INATIVA  MOD Injeção Zamak ";ina;03INJ
+MO04;INATIVA MOD Cravação;ina;04CRA
+MO05;INATIVA MOD Tornos;ina;05TOR
+MO06;INATIVA MOD Furar/Roscar;ina;06FRR
+MO07;INATIVA MOD Escolha Corte;ina;07ECO
+MO08;"INATIVA MOD Linha Fechaduras ";ina;12LFE
+MO08X;"INATIVA MOD Linha Fechaduras ";ina;12LFE
+MO09;INATIVA MOD Pintura;ina;09PIN
+MO10;INATIVA  MOD Embalagem;ina;10EMB
+MO11;INATIVA MOD Acessórios;ina;11LAC
+MO12;INATIVA MOD Fechaduras 2P;ina;12LFE
+MO13;INATIVA  MOD Embalagem Oscilos;ina;13OSC
+MO14;INATIVA  MOD Ferramentaria;ina;14FER
+MO15;INATIVVA MOD Armazém;ina;15APA
+MO16;INATIVA MOD Lixar;ina;16LIX
+MO17;INATIVA MOD Recuperação;ina;17REC
+MO18;INATIVA MOD Robôs;ina;18ROB
+MO19;INATIVA MOD Balancés 2ºlinha;ina;01BAL
+MO20;INATIVA MOD Dob Serrotes;ina;02DOB
+MO21;INATIVA MOD ESCOLHA TAMBOR;ina;07ECO
+MO22;INATIVA MOD ACESSÓROS 2P;ina;11LAC
+MO23;INATIVA MOD ACESSÓROS 3P;ina;11LAC
+MO24;INATIVA MOD EMBALAGEM 2P;ina;10EMB
+MO25;INATIVA MOD Fechaduras 1P;ina;12LFE
+MO26;INATIVA MOD LIXA 1P;ina;16LIX
+MO27;INATIVA MOD ROBÔ 1P;ina;18ROB
+MO28;INATIVA MOD Vibradora;ina;09PIN
+MO29;INATIVA MOD Dob anodização;ina;02DOB
+MO30;INATIVA MOD Ferramentaria;ina;14FER
+MO31;INATIVA MOD Torno 1;ina;05TOR
+MO32;INATIVA MOD Injeção aluminio;ina;03INJ
+MO33;INATIVA  MOD Maq Roscar;ina;02DOB
+MO34;INATIVA MOD Escolha EC03;ina;07ECO
+MO35;INATIVA MOD ROBÔ RT03;ina;18ROB
+MO36;INATIVA MOD ROBÔ RR05;ina;18ROB
+MO40;"MO INATIVA ";ina;19MOB
+MO41;MO Pintura 70,59;ina;19MOB
+MO42;MO 14,63 1  linha balances;ina;19MOB
+MO43;MO 10,74 - 1 Pessoa;ina;19MOB
+MO44;MO 3,58;ina;19MOB
+MO45;MO 4,01 - Serrotes Vib Dob;ina;19MOB
+MO46;MO INATIVA;ina;19MOB
+MO47;MO inativo;ina;19MOB
+MO48;MO 21,48 - 2 Pessoas;ina;19MOB
+MO49;MO inativo;ina;19MOB
+MO50;MO 32,22 - 3 Pessoas;ina;19MOB
+MO51;MO 8.09 INJECAO;ina;19MOB
+MO52;MO inativo;ina;19MOB
+MO53;MO inativo;ina;19MOB
+MO54;MO SERROTES 4,88;ina;19MOB
+OB02;Balancé 9;" ";13OSC
+OB07;Balancé (pequeno) 10;" ";13OSC
+OB09;Balancé 11;ina;13OSC
+OC01;Máquina de Cravar 4;" ";13OSC
+OC08;Máquina de Cravar 5;" ";13OSC
+OC10;Máquina de Cravar 6;" ";13OSC
+OC11;Máquina Cravar p/ Coordenadas;" ";13OSC
+OE04;Máquina de Embalar 6;ina;13OSC
+OF03;"ina Máquina de Furar/Roscar 6 ";ina;13OSC
+OM05;INA Linha de Montagem Oscilo;ina;13OSC
+OM06;Linha de Montagem Manual;" ";13OSC
+PP04;Linha de Pintura 1;" ";09PIN
+PS03;ina Máquina de Secar 2;ina;09PIN
+PT05;Túnel de Selagem 1;ina;09PIN
+PV01;Máquina Vibrar 1;" ";09PIN
+PV02;Máquina Vibrar 2;" ";09PIN
+PV06;Máquina Vibrar 3;" ";09PIN
+RE01;Forno de fusão 1;ina;17REC
+RE02;Tambor 2;ina;07ECO
+RF04;"Fresadora 3 ";" ";18ROB
+RG06;Guilhotina 1;ina;18ROB
+RO01;Célula com Robô de Lixar 1;" ";18ROB
+RO02;Célula com Robô de Lixar 2;" ";18ROB
+RR05;Unidade Transfere de Roscar;;18ROB
+RR07;Máquina de Rebordar 1;" ";18ROB
+RR09;Unidade Transfere de Roscar 2;" ";18ROB
+RR10;Máquina Roscar Horizontal 1;" ";18ROB
+RR11;Unidade Transfere de Roscar 3;" ";18ROB
+RS08;Sistema de montar roletos;" ";18ROB
+RT03;Torno Revolver 9;" ";18ROB
+SC01;Subcontratação;ina;08SUB
+TST01;Teste Integração Máquinas;ina;99TST
+TST02;Teste Integração Máquinas 2;ina;99TST
+TT01;Torno 1;" ";05TOR
+TT02;Torno 2;ina;05TOR
+TT03;Torno 3;ina;05TOR
+TT04;Torno 4;ina;05TOR
+TT05;Torno 5;ina;05TOR
+TT06;Torno 6;ina;05TOR
+TT07;Torno 7;ina;05TOR
+TT08;Torno 8;ina;05TOR
+TT09;Balancé Manual;ina;05TOR
+SM;OUTROS;;00CMP

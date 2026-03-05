@@ -68,6 +68,32 @@ Este comando iniciará um servidor local. O terminal irá mostrar um link (norma
 
 ---
 
+## Como Executar com Docker (Recomendado)
+
+Agora que o projeto inclui um backend em **.NET 8** e uma base de dados **PostgreSQL**, a forma mais simples de rodar tudo em sincronia é utilizando o Docker Compose.
+
+### 1. Pré-requisitos
+
+- Ter o [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e a correr.
+
+### 2. Iniciar o Ambiente
+
+Na raiz do projeto (onde está o ficheiro `docker-compose.yml`), execute:
+
+```bash
+docker compose up --build
+```
+
+### 3. Aceder aos Serviços
+
+- **Frontend (React)**: [http://localhost:5173](http://localhost:5173)
+- **Backend (API Swagger)**: [http://localhost:5000/swagger](http://localhost:5000/swagger)
+- **Base de Dados**: `localhost:5432` (User/Pass: `postgres/postgres`)
+
+---
+
+---
+
 ## Comandos Disponíveis (Scripts)
 
 Dentro da pasta `frontend`, tem acesso aos seguintes comandos principais:

@@ -3,19 +3,30 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
-    // Representa a tabela "diversos" na base de dados
+    // Representa a tabela "diversos" — propriedades técnicas extras do artigo vindas do PDM (SolidWorks)
+    // Cada linha é uma propriedade de um artigo (ex: Material, Acabamento, Norma, etc.)
     public class Diversos
     {
         // Chave Primária (PK)
         [Key]
         public int Id { get; set; }
 
-        // Descrição
+        // Chave Estrangeira (FK) para o Artigo a que pertence
         [Required]
         [MaxLength(255)]
-        public string Descricao { get; set; } = string.Empty;
+        public string ArtigoCodigo { get; set; } = string.Empty;
 
-        // Um item "diverso" pode estar associado a muitos artigos
-        public ICollection<Artigo> Artigos { get; set; } = new List<Artigo>();
+        [ForeignKey("ArtigoCodigo")]
+        public Artigo? Artigo { get; set; }
+
+        // Nome da propriedade PDM (ex: "Material", "Acabamento_Superficie", "Norma")
+        [Required]
+        [MaxLength(255)]
+        public string Propriedade { get; set; } = string.Empty;
+
+        // Valor da propriedade (ex: "Alumínio 6060", "Lacado RAL 9010", "EN 755-9")
+        [Required]
+        [MaxLength(500)]
+        public string Valor { get; set; } = string.Empty;
     }
 }

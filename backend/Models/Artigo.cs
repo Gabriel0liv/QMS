@@ -39,13 +39,8 @@ namespace backend.Models
         [ForeignKey("FamiliaId")]
         public Familia? Familia { get; set; }
 
-        // Chave Estrangeira (FK) para Diversos
-        [Required]
-        public int DiversosId { get; set; }
-
-        // Propriedade de Navegação para a tabela Diversos
-        [ForeignKey("DiversosId")]
-        public Diversos? Diversos { get; set; }
+        // Coleção de propriedades técnicas PDM (ex: Material, Acabamento, etc.)
+        public ICollection<Diversos> PropriedadesPDM { get; set; } = new List<Diversos>();
 
         // Chave Estrangeira (FK) para a máquina padrão associada ao fabrico
         [Required]
@@ -59,5 +54,6 @@ namespace backend.Models
         // Relações com outras tabelas
         public ICollection<ArtigoCusto> HistoricoCustos { get; set; } = new List<ArtigoCusto>();
         public ICollection<DocumentoTecnico> Documentos { get; set; } = new List<DocumentoTecnico>();
+        public ICollection<RececaoInspecao> Rececoes { get; set; } = new List<RececaoInspecao>();
     }
 }

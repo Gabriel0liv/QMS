@@ -14,6 +14,20 @@
           "lib/net8.0/CsvHelper.dll": {}
         }
       },
+      "EFCore.NamingConventions/8.0.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "[8.0.0, 9.0.0)",
+          "Microsoft.EntityFrameworkCore.Relational": "[8.0.0, 9.0.0)",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0"
+        },
+        "compile": {
+          "lib/net8.0/EFCore.NamingConventions.dll": {}
+        },
+        "runtime": {
+          "lib/net8.0/EFCore.NamingConventions.dll": {}
+        }
+      },
       "Humanizer.Core/2.14.1": {
         "type": "package",
         "compile": {
@@ -882,6 +896,18 @@
         "lib/net8.0/CsvHelper.dll",
         "lib/netstandard2.0/CsvHelper.dll",
         "lib/netstandard2.1/CsvHelper.dll"
+      ]
+    },
+    "EFCore.NamingConventions/8.0.3": {
+      "sha512": "TdDarM6kyIS2oVIhrs3W+r+xL/76ooFJxIXxfhzsNJQu0pB9VdFZwuyKvKJnhoc7OHYFNTBP08AN37kr4CPc+Q==",
+      "type": "package",
+      "path": "efcore.namingconventions/8.0.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "efcore.namingconventions.8.0.3.nupkg.sha512",
+        "efcore.namingconventions.nuspec",
+        "lib/net8.0/EFCore.NamingConventions.dll"
       ]
     },
     "Humanizer.Core/2.14.1": {
@@ -2488,6 +2514,7 @@
   "projectFileDependencyGroups": {
     "net8.0": [
       "CsvHelper >= 31.0.0",
+      "EFCore.NamingConventions >= 8.0.3",
       "Microsoft.AspNetCore.OpenApi >= 8.0.0",
       "Microsoft.EntityFrameworkCore >= 8.0.0",
       "Microsoft.EntityFrameworkCore.Design >= 8.0.0",
@@ -2496,19 +2523,19 @@
     ]
   },
   "packageFolders": {
-    "/root/.nuget/packages/": {}
+    "C:\\Users\\gabri\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/app/backend/backend.csproj",
+      "projectUniqueName": "C:\\Users\\gabri\\Desktop\\estágio\\Projeto\\backend\\backend.csproj",
       "projectName": "backend",
-      "projectPath": "/app/backend/backend.csproj",
-      "packagesPath": "/root/.nuget/packages/",
-      "outputPath": "/app/backend/obj/",
+      "projectPath": "C:\\Users\\gabri\\Desktop\\estágio\\Projeto\\backend\\backend.csproj",
+      "packagesPath": "C:\\Users\\gabri\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\gabri\\Desktop\\estágio\\Projeto\\backend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/root/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\gabri\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -2540,6 +2567,10 @@
           "CsvHelper": {
             "target": "Package",
             "version": "[31.0.0, )"
+          },
+          "EFCore.NamingConventions": {
+            "target": "Package",
+            "version": "[8.0.3, )"
           },
           "Microsoft.AspNetCore.OpenApi": {
             "target": "Package",
@@ -2583,7 +2614,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.418/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.418/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -16,7 +16,8 @@ builder.Services.AddSwaggerGen();
 // Equivalente a configurar o DataSource no Spring.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString)
+           .UseLowerCaseNamingConvention());
 
 // CONFIGURAÇÃO DE CORS
 // Permite que o seu React (porta 5173) chame esta API.

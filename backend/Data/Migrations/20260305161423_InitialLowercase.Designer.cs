@@ -2,18 +2,21 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.Data;
 
 #nullable disable
 
-namespace backend.Migrations
+namespace backend.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260305161423_InitialLowercase")]
+    partial class InitialLowercase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,722 +29,899 @@ namespace backend.Migrations
                 {
                     b.Property<string>("ArtigoCodigo")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("artigocodigo");
 
                     b.Property<string>("Categoria")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("categoria");
 
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<int>("DiversosId")
-                        .HasColumnType("integer");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("descricao");
 
                     b.Property<int>("FamiliaId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("familiaid");
 
                     b.Property<string>("MaquinaCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("maquinacodigo");
 
                     b.Property<decimal>("Peso")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("peso");
 
                     b.Property<string>("Unidade")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("unidade");
 
-                    b.HasKey("ArtigoCodigo");
+                    b.HasKey("ArtigoCodigo")
+                        .HasName("pk_artigos");
 
-                    b.HasIndex("DiversosId");
+                    b.HasIndex("FamiliaId")
+                        .HasDatabaseName("ix_artigos_familiaid");
 
-                    b.HasIndex("FamiliaId");
+                    b.HasIndex("MaquinaCodigo")
+                        .HasDatabaseName("ix_artigos_maquinacodigo");
 
-                    b.HasIndex("MaquinaCodigo");
-
-                    b.ToTable("Artigos");
+                    b.ToTable("artigos", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.ArtigoCusto", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ArtigoCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("artigocodigo");
 
                     b.Property<decimal>("CustoPintura")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("custopintura");
 
                     b.Property<DateTime?>("DataFim")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("datafim");
 
                     b.Property<DateTime>("DataInicio")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("datainicio");
 
                     b.Property<decimal>("PraMatprim")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("pramatprim");
 
                     b.Property<decimal>("PrecoEnergia")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("precoenergia");
 
                     b.Property<decimal>("PriTotal")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("pritotal");
 
                     b.Property<decimal>("PruMaquina")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("prumaquina");
 
                     b.Property<decimal>("PrwiMaoobra")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("prwimaoobra");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_artigoscusto");
 
-                    b.HasIndex("ArtigoCodigo");
+                    b.HasIndex("ArtigoCodigo")
+                        .HasDatabaseName("ix_artigoscusto_artigocodigo");
 
-                    b.ToTable("ArtigosCusto");
+                    b.ToTable("artigoscusto", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.AssinaturaDocumento", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AssinaturaHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("assinaturahash");
 
                     b.Property<DateTime>("DataAssinatura")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dataassinatura");
 
                     b.Property<string>("DepartamentoAssinatura")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("departamentoassinatura");
 
                     b.Property<int>("DocumentoId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("documentoid");
 
                     b.Property<string>("UtilizadorCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("utilizadorcodigo");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_assinaturasdocumento");
 
                     b.HasIndex("AssinaturaHash")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_assinaturasdocumento_assinaturahash");
 
-                    b.HasIndex("DocumentoId");
+                    b.HasIndex("DocumentoId")
+                        .HasDatabaseName("ix_assinaturasdocumento_documentoid");
 
-                    b.HasIndex("UtilizadorCodigo");
+                    b.HasIndex("UtilizadorCodigo")
+                        .HasDatabaseName("ix_assinaturasdocumento_utilizadorcodigo");
 
-                    b.ToTable("AssinaturasDocumento");
+                    b.ToTable("assinaturasdocumento", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Cargo", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("descricao");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_cargos");
 
                     b.HasIndex("Descricao")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_cargos_descricao");
 
-                    b.ToTable("Cargos");
+                    b.ToTable("cargos", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.CatalogoDefeito", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Codigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("codigo");
 
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("descricao");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_catalogosdefeito");
 
                     b.HasIndex("Codigo")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_catalogosdefeito_codigo");
 
-                    b.ToTable("CatalogosDefeito");
+                    b.ToTable("catalogosdefeito", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Diversos", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Descricao")
+                    b.Property<string>("ArtigoCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("artigocodigo");
 
                     b.Property<int?>("FamiliaId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("familiaid");
 
-                    b.HasKey("Id");
+                    b.Property<string>("Propriedade")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("propriedade");
 
-                    b.HasIndex("FamiliaId");
+                    b.Property<string>("Valor")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("valor");
 
-                    b.ToTable("DiversosLista");
+                    b.HasKey("Id")
+                        .HasName("pk_diversoslista");
+
+                    b.HasIndex("FamiliaId")
+                        .HasDatabaseName("ix_diversoslista_familiaid");
+
+                    b.HasIndex("ArtigoCodigo", "Propriedade")
+                        .IsUnique()
+                        .HasDatabaseName("ix_diversoslista_artigocodigo_propriedade");
+
+                    b.ToTable("diversoslista", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.DocumentoTecnico", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ArtigoCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("artigocodigo");
 
                     b.Property<string>("CaminhoFicheiro")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("caminhoficheiro");
 
                     b.Property<bool>("IsOficial")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("isoficial");
 
                     b.Property<string>("TipoDocumento")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tipodocumento");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_documentostecnicos");
 
-                    b.HasIndex("ArtigoCodigo");
+                    b.HasIndex("ArtigoCodigo")
+                        .HasDatabaseName("ix_documentostecnicos_artigocodigo");
 
                     b.HasIndex("CaminhoFicheiro")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_documentostecnicos_caminhoficheiro");
 
-                    b.ToTable("DocumentosTecnicos");
+                    b.ToTable("documentostecnicos", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Familia", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Codigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("codigo");
 
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("descricao");
 
                     b.Property<string>("ParametrosInspecao")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("parametrosinspecao");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_familias");
 
                     b.HasIndex("Codigo")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_familias_codigo");
 
-                    b.ToTable("Familias");
+                    b.ToTable("familias", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Fornecedor", b =>
                 {
                     b.Property<string>("FornecedorCodigo")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("fornecedorcodigo");
 
                     b.Property<string>("Morada")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("morada");
 
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("nome");
 
-                    b.HasKey("FornecedorCodigo");
+                    b.HasKey("FornecedorCodigo")
+                        .HasName("pk_fornecedores");
 
-                    b.ToTable("Fornecedores");
+                    b.ToTable("fornecedores", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.FornecedorClassificacao", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AnoFiscal")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("anofiscal");
 
                     b.Property<string>("Classificacao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("classificacao");
 
                     b.Property<string>("FornecedorCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("fornecedorcodigo");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_fornecedoresclassificacao");
 
                     b.HasIndex("FornecedorCodigo", "AnoFiscal")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_fornecedoresclassificacao_fornecedorcodigo_anofiscal");
 
-                    b.ToTable("FornecedoresClassificacao");
+                    b.ToTable("fornecedoresclassificacao", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.JustificacaoNOK", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("DefeitoId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("defeitoid");
 
                     b.Property<string>("Observacoes")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("observacoes");
 
                     b.Property<decimal>("QtdAfetada")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("qtdafetada");
 
                     b.Property<int>("RececaoId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("rececaoid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_justificacoesnok");
 
-                    b.HasIndex("DefeitoId");
+                    b.HasIndex("DefeitoId")
+                        .HasDatabaseName("ix_justificacoesnok_defeitoid");
 
-                    b.HasIndex("RececaoId");
+                    b.HasIndex("RececaoId")
+                        .HasDatabaseName("ix_justificacoesnok_rececaoid");
 
-                    b.ToTable("JustificacoesNOK");
+                    b.ToTable("justificacoesnok", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Maquina", b =>
                 {
                     b.Property<string>("MaquinaCodigo")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("maquinacodigo");
 
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("descricao");
 
                     b.Property<bool>("Estado")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("estado");
 
                     b.Property<decimal>("PrecoEnergia")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("precoenergia");
 
                     b.Property<decimal>("PrecoMaoObra")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("precomaoobra");
 
                     b.Property<decimal>("PrecoUsinagem")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("precousinagem");
 
                     b.Property<int?>("Setor")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("setor");
 
-                    b.HasKey("MaquinaCodigo");
+                    b.HasKey("MaquinaCodigo")
+                        .HasName("pk_maquinas");
 
-                    b.ToTable("Maquinas");
+                    b.ToTable("maquinas", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Movimento", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ArtigoCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("artigocodigo");
 
                     b.Property<DateTime>("DataMovimento")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("datamovimento");
 
                     b.Property<int?>("DefeitoId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("defeitoid");
 
                     b.Property<bool>("Descontar")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("descontar");
 
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("estado");
 
                     b.Property<string>("Localizacao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("localizacao");
 
                     b.Property<string>("MaquinaCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("maquinacodigo");
 
                     b.Property<string>("Observacoes")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("observacoes");
 
                     b.Property<decimal>("Quantidade")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantidade");
 
                     b.Property<int?>("ServicoId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("servicoid");
 
                     b.Property<int>("TipoMovimentoId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("tipomovimentoid");
 
                     b.Property<string>("UtilizadorCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("utilizadorcodigo");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_movimentos");
 
-                    b.HasIndex("ArtigoCodigo");
+                    b.HasIndex("ArtigoCodigo")
+                        .HasDatabaseName("ix_movimentos_artigocodigo");
 
-                    b.HasIndex("DefeitoId");
+                    b.HasIndex("DefeitoId")
+                        .HasDatabaseName("ix_movimentos_defeitoid");
 
-                    b.HasIndex("MaquinaCodigo");
+                    b.HasIndex("MaquinaCodigo")
+                        .HasDatabaseName("ix_movimentos_maquinacodigo");
 
-                    b.HasIndex("ServicoId");
+                    b.HasIndex("ServicoId")
+                        .HasDatabaseName("ix_movimentos_servicoid");
 
-                    b.HasIndex("TipoMovimentoId");
+                    b.HasIndex("TipoMovimentoId")
+                        .HasDatabaseName("ix_movimentos_tipomovimentoid");
 
-                    b.HasIndex("UtilizadorCodigo");
+                    b.HasIndex("UtilizadorCodigo")
+                        .HasDatabaseName("ix_movimentos_utilizadorcodigo");
 
-                    b.ToTable("Movimentos");
+                    b.ToTable("movimentos", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.NaoConforme", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("DataRegisto")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dataregisto");
 
                     b.Property<int>("IdMovimento")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("idmovimento");
 
                     b.Property<decimal>("QtdSage")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("qtdsage");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_naoconformes");
 
                     b.HasIndex("IdMovimento")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_naoconformes_idmovimento");
 
-                    b.ToTable("NaoConformes");
+                    b.ToTable("naoconformes", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Nivel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("descricao");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_niveis");
 
                     b.HasIndex("Descricao")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_niveis_descricao");
 
-                    b.ToTable("Niveis");
+                    b.ToTable("niveis", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.RececaoInspecao", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ArtigoCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("artigocodigo");
 
                     b.Property<decimal>("CustoUnitarioMomento")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("custounitariomomento");
 
                     b.Property<DateTime>("DataRececao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("datarececao");
 
                     b.Property<string>("DecisaoFinal")
-                        .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("decisaofinal");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("estado");
 
                     b.Property<string>("Fatura")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("fatura");
 
                     b.Property<string>("FornecedorCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("fornecedorcodigo");
 
                     b.Property<int>("Linha")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("linha");
 
                     b.Property<decimal>("QtdTotalRecebida")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("qtdtotalrecebida");
 
                     b.Property<decimal>("Quantidade")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantidade");
 
                     b.Property<string>("SagePedidoId")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("sagepedidoid");
 
                     b.Property<string>("Unidade")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("unidade");
 
                     b.Property<string>("UtilizadorCodigo")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("utilizadorcodigo");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_rececoesinspecao");
 
-                    b.HasIndex("ArtigoCodigo");
+                    b.HasIndex("ArtigoCodigo")
+                        .HasDatabaseName("ix_rececoesinspecao_artigocodigo");
 
-                    b.HasIndex("FornecedorCodigo");
+                    b.HasIndex("FornecedorCodigo")
+                        .HasDatabaseName("ix_rececoesinspecao_fornecedorcodigo");
 
-                    b.HasIndex("UtilizadorCodigo");
+                    b.HasIndex("UtilizadorCodigo")
+                        .HasDatabaseName("ix_rececoesinspecao_utilizadorcodigo");
 
                     b.HasIndex("SagePedidoId", "Linha")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_rececoesinspecao_sagepedidoid_linha");
 
-                    b.ToTable("RececoesInspecao");
+                    b.ToTable("rececoesinspecao", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Retrabalho", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AcaoExecutar")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("acaoexecutar");
 
                     b.Property<decimal?>("CustoNc")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("custonc");
 
                     b.Property<decimal?>("CustoRejeicao")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("custorejeicao");
 
                     b.Property<decimal?>("CustoRetrabalho")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("custoretrabalho");
 
                     b.Property<DateTime>("DataRetrabalho")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dataretrabalho");
 
                     b.Property<int>("IdMovimento")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("idmovimento");
 
                     b.Property<string>("MaquinaRejeicao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("maquinarejeicao");
 
                     b.Property<string>("SetorIdentificado")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("setoridentificado");
 
                     b.Property<decimal>("TempoMinutos")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("tempominutos");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_retrabalhos");
 
                     b.HasIndex("IdMovimento")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_retrabalhos_idmovimento");
 
-                    b.HasIndex("MaquinaRejeicao");
+                    b.HasIndex("MaquinaRejeicao")
+                        .HasDatabaseName("ix_retrabalhos_maquinarejeicao");
 
-                    b.ToTable("Retrabalhos");
+                    b.ToTable("retrabalhos", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Servico", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("CustoDecapar")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("custodecapar");
 
                     b.Property<DateTime?>("DataFim")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("datafim");
 
                     b.Property<DateTime>("DataInicio")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("datainicio");
 
                     b.Property<decimal>("Valor")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("valor");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_servicos");
 
-                    b.ToTable("Servicos");
+                    b.ToTable("servicos", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.TipoMovimento", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("descricao");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_tiposmovimento");
 
                     b.HasIndex("Descricao")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_tiposmovimento_descricao");
 
-                    b.ToTable("TiposMovimento");
+                    b.ToTable("tiposmovimento", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Utilizador", b =>
                 {
                     b.Property<string>("UtilizadorCodigo")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("utilizadorcodigo");
 
                     b.Property<bool>("Active")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("active");
 
                     b.Property<int>("CargoId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("cargoid");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
 
                     b.Property<int>("NivelId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("nivelid");
 
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("nome");
 
-                    b.HasKey("UtilizadorCodigo");
+                    b.HasKey("UtilizadorCodigo")
+                        .HasName("pk_utilizadores");
 
-                    b.HasIndex("CargoId");
+                    b.HasIndex("CargoId")
+                        .HasDatabaseName("ix_utilizadores_cargoid");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_utilizadores_email");
 
-                    b.HasIndex("NivelId");
+                    b.HasIndex("NivelId")
+                        .HasDatabaseName("ix_utilizadores_nivelid");
 
-                    b.ToTable("Utilizadores");
+                    b.ToTable("utilizadores", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Artigo", b =>
                 {
-                    b.HasOne("backend.Models.Diversos", "Diversos")
-                        .WithMany("Artigos")
-                        .HasForeignKey("DiversosId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("backend.Models.Familia", "Familia")
                         .WithMany()
                         .HasForeignKey("FamiliaId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_artigos_familias_familiaid");
 
                     b.HasOne("backend.Models.Maquina", "Maquina")
                         .WithMany("Artigos")
                         .HasForeignKey("MaquinaCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Diversos");
+                        .IsRequired()
+                        .HasConstraintName("fk_artigos_maquinas_maquinacodigo");
 
                     b.Navigation("Familia");
 
@@ -754,7 +934,8 @@ namespace backend.Migrations
                         .WithMany("HistoricoCustos")
                         .HasForeignKey("ArtigoCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_artigoscusto_artigos_artigocodigo");
 
                     b.Navigation("Artigo");
                 });
@@ -765,13 +946,15 @@ namespace backend.Migrations
                         .WithMany("Assinaturas")
                         .HasForeignKey("DocumentoId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_assinaturasdocumento_documentostecnicos_documentoid");
 
                     b.HasOne("backend.Models.Utilizador", "Utilizador")
                         .WithMany("Assinaturas")
                         .HasForeignKey("UtilizadorCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_assinaturasdocumento_utilizadores_utilizadorcodigo");
 
                     b.Navigation("Documento");
 
@@ -780,9 +963,19 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Models.Diversos", b =>
                 {
+                    b.HasOne("backend.Models.Artigo", "Artigo")
+                        .WithMany("PropriedadesPDM")
+                        .HasForeignKey("ArtigoCodigo")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_diversoslista_artigos_artigocodigo");
+
                     b.HasOne("backend.Models.Familia", null)
                         .WithMany("DiversosLista")
-                        .HasForeignKey("FamiliaId");
+                        .HasForeignKey("FamiliaId")
+                        .HasConstraintName("fk_diversoslista_familias_familiaid");
+
+                    b.Navigation("Artigo");
                 });
 
             modelBuilder.Entity("backend.Models.DocumentoTecnico", b =>
@@ -791,7 +984,8 @@ namespace backend.Migrations
                         .WithMany("Documentos")
                         .HasForeignKey("ArtigoCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_documentostecnicos_artigos_artigocodigo");
 
                     b.Navigation("Artigo");
                 });
@@ -802,7 +996,8 @@ namespace backend.Migrations
                         .WithMany("Classificacoes")
                         .HasForeignKey("FornecedorCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_fornecedoresclassificacao_fornecedores_fornecedorcodigo");
 
                     b.Navigation("Fornecedor");
                 });
@@ -813,13 +1008,15 @@ namespace backend.Migrations
                         .WithMany()
                         .HasForeignKey("DefeitoId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_justificacoesnok_catalogosdefeito_defeitoid");
 
                     b.HasOne("backend.Models.RececaoInspecao", "Rececao")
                         .WithMany("Justificacoes")
                         .HasForeignKey("RececaoId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_justificacoesnok_rececoesinspecao_rececaoid");
 
                     b.Navigation("Defeito");
 
@@ -832,33 +1029,39 @@ namespace backend.Migrations
                         .WithMany()
                         .HasForeignKey("ArtigoCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_movimentos_artigos_artigocodigo");
 
                     b.HasOne("backend.Models.CatalogoDefeito", "Defeito")
                         .WithMany()
-                        .HasForeignKey("DefeitoId");
+                        .HasForeignKey("DefeitoId")
+                        .HasConstraintName("fk_movimentos_catalogosdefeito_defeitoid");
 
                     b.HasOne("backend.Models.Maquina", "Maquina")
                         .WithMany()
                         .HasForeignKey("MaquinaCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_movimentos_maquinas_maquinacodigo");
 
                     b.HasOne("backend.Models.Servico", "Servico")
                         .WithMany("Movimentos")
-                        .HasForeignKey("ServicoId");
+                        .HasForeignKey("ServicoId")
+                        .HasConstraintName("fk_movimentos_servicos_servicoid");
 
                     b.HasOne("backend.Models.TipoMovimento", "Tipo")
                         .WithMany("Movimentos")
                         .HasForeignKey("TipoMovimentoId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_movimentos_tiposmovimento_tipomovimentoid");
 
                     b.HasOne("backend.Models.Utilizador", "Utilizador")
                         .WithMany()
                         .HasForeignKey("UtilizadorCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_movimentos_utilizadores_utilizadorcodigo");
 
                     b.Navigation("Artigo");
 
@@ -879,7 +1082,8 @@ namespace backend.Migrations
                         .WithOne("NaoConforme")
                         .HasForeignKey("backend.Models.NaoConforme", "IdMovimento")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_naoconformes_movimentos_idmovimento");
 
                     b.Navigation("Movimento");
                 });
@@ -887,22 +1091,25 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.RececaoInspecao", b =>
                 {
                     b.HasOne("backend.Models.Artigo", "Artigo")
-                        .WithMany()
+                        .WithMany("Rececoes")
                         .HasForeignKey("ArtigoCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_rececoesinspecao_artigos_artigocodigo");
 
                     b.HasOne("backend.Models.Fornecedor", "Fornecedor")
                         .WithMany()
                         .HasForeignKey("FornecedorCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_rececoesinspecao_fornecedores_fornecedorcodigo");
 
                     b.HasOne("backend.Models.Utilizador", "Utilizador")
                         .WithMany()
                         .HasForeignKey("UtilizadorCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_rececoesinspecao_utilizadores_utilizadorcodigo");
 
                     b.Navigation("Artigo");
 
@@ -917,13 +1124,15 @@ namespace backend.Migrations
                         .WithOne("Retrabalho")
                         .HasForeignKey("backend.Models.Retrabalho", "IdMovimento")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_retrabalhos_movimentos_idmovimento");
 
                     b.HasOne("backend.Models.Maquina", "Maquina")
                         .WithMany()
                         .HasForeignKey("MaquinaRejeicao")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_retrabalhos_maquinas_maquinarejeicao");
 
                     b.Navigation("Maquina");
 
@@ -936,13 +1145,15 @@ namespace backend.Migrations
                         .WithMany("Utilizadores")
                         .HasForeignKey("CargoId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_utilizadores_cargos_cargoid");
 
                     b.HasOne("backend.Models.Nivel", "Nivel")
                         .WithMany("Utilizadores")
                         .HasForeignKey("NivelId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_utilizadores_niveis_nivelid");
 
                     b.Navigation("Cargo");
 
@@ -954,16 +1165,15 @@ namespace backend.Migrations
                     b.Navigation("Documentos");
 
                     b.Navigation("HistoricoCustos");
+
+                    b.Navigation("PropriedadesPDM");
+
+                    b.Navigation("Rececoes");
                 });
 
             modelBuilder.Entity("backend.Models.Cargo", b =>
                 {
                     b.Navigation("Utilizadores");
-                });
-
-            modelBuilder.Entity("backend.Models.Diversos", b =>
-                {
-                    b.Navigation("Artigos");
                 });
 
             modelBuilder.Entity("backend.Models.DocumentoTecnico", b =>

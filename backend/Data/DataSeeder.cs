@@ -17,270 +17,394 @@ namespace backend.Data
             {
                 await SeedMaquinasAsync(context, Path.Combine(dataFolder, "MAQUINAS_qms_20260304.csv"));
                 await SeedFornecedoresAsync(context, Path.Combine(dataFolder, "FORNECEDORES_qms_20260304.csv"));
-                // O ficheiro de artigos irá criar também as Famílias e os "Diversos" em cascata
                 await SeedArtigosAsync(context, Path.Combine(dataFolder, "artigos_QMS_20260304.csv"));
                 await SeedCustosArtigoAsync(context, Path.Combine(dataFolder, "ARTIGOS_CUSTO_QMS_20260304.csv"));
                 await SeedRececoesAsync(context, Path.Combine(dataFolder, "RECEPCOES_qms_20260304.csv"));
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro crítico durante a importação de dados (Seed): {ex.Message}");
+                var fullError = GetFullErrorMessage(ex);
+                Console.WriteLine("************************************************************");
+                Console.WriteLine($"ERRO CRÍTICO NO SEED: {fullError}");
+                Console.WriteLine("************************************************************");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             }
+        }
+
+        private static string GetFullErrorMessage(Exception ex)
+        {
+            if (ex.InnerException == null) return ex.Message;
+            return GetFullErrorMessage(ex.InnerException);
         }
 
         private static async Task SeedMaquinasAsync(AppDbContext context, string filePath)
         {
-            if (await context.Maquinas.AnyAsync() || !File.Exists(filePath)) return;
+            if (!File.Exists(filePath)) return;
 
-            Console.WriteLine("Importando Máquinas...");
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = ";", BadDataFound = null };
+            Console.WriteLine("Verificando Máquinas...");
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) 
+            { 
+                Delimiter = ";", 
+                HasHeaderRecord = false, 
+                BadDataFound = null 
+            };
             using var reader = new StreamReader(filePath);
             using var csv = new CsvReader(reader, config);
             
-            csv.Read();
-            csv.ReadHeader();
+            var existingMaqs = await context.Maquinas.Select(m => m.MaquinaCodigo).ToListAsync();
+            var maquinasParaInserir = new List<Maquina>();
 
-            var maquinas = new List<Maquina>();
             while (csv.Read())
             {
-                var estadoStr = csv.GetField<string>("ESTADO")?.Trim().ToLower();
-                // Estado: Se for "ina" é false (inativo), se for vazio ou outro assume ativo
+                var cod = csv.GetField<string>(0) ?? string.Empty;
+                if (existingMaqs.Contains(cod) || maquinasParaInserir.Any(m => m.MaquinaCodigo == cod)) continue;
+
+                var estadoStr = csv.GetField<string>(2)?.Trim().ToLower(); 
                 bool isEstadoAtivo = estadoStr != "ina";
 
-                var setorStr = csv.GetField<string>("SETOR")?.Trim();
-                // O Setor vindo do SAGE (ex "15APA") seria texto no CSV mas int no bd.md - Se não for conversível para INT, guardamos null
+                var setorStr = csv.GetField<string>(3)?.Trim(); 
                 int? setorId = null;
                 if (int.TryParse(setorStr, out int parsedSetor)) setorId = parsedSetor;
 
-                maquinas.Add(new Maquina
+                maquinasParaInserir.Add(new Maquina
                 {
-                    MaquinaCodigo = csv.GetField<string>("MAQ") ?? string.Empty,
-                    Descricao = csv.GetField<string>("DESCRICAMAQ") ?? string.Empty,
+                    MaquinaCodigo = cod,
+                    Descricao = csv.GetField<string>(1) ?? string.Empty,
                     Estado = isEstadoAtivo,
                     Setor = setorId
                 });
             }
 
-            await context.Maquinas.AddRangeAsync(maquinas);
-            await context.SaveChangesAsync();
+            if (maquinasParaInserir.Any())
+            {
+                Console.WriteLine($"Inserindo {maquinasParaInserir.Count} novas Máquinas...");
+                await context.Maquinas.AddRangeAsync(maquinasParaInserir);
+                await context.SaveChangesAsync();
+            }
         }
 
         private static async Task SeedFornecedoresAsync(AppDbContext context, string filePath)
         {
-            if (await context.Fornecedores.AnyAsync() || !File.Exists(filePath)) return;
+            if (!File.Exists(filePath)) return;
 
-            Console.WriteLine("Importando Fornecedores...");
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = ";", BadDataFound = null };
+            Console.WriteLine("Verificando Fornecedores...");
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) 
+            { 
+                Delimiter = ";", 
+                HasHeaderRecord = false, 
+                BadDataFound = null 
+            };
             using var reader = new StreamReader(filePath);
             using var csv = new CsvReader(reader, config);
             
-            csv.Read();
-            csv.ReadHeader();
-
-            var fornecedores = new List<Fornecedor>();
+            var existingCodes = await context.Fornecedores.Select(f => f.FornecedorCodigo).ToListAsync();
+            var fornecedoresParaInserir = new List<Fornecedor>();
             var anoAtual = DateTime.Now.Year;
 
             while (csv.Read())
             {
-                var codigo = csv.GetField<string>("BPSNUM_0") ?? string.Empty;
-                var tipoRaw = csv.GetField<string>("TIPO_0") ?? "Normal";
-                
-                // Limpeza de Tipos Duplicados do SAGE (Ex: "NormalNormal")
+                var cod = csv.GetField<string>(0) ?? string.Empty; 
+                if (existingCodes.Contains(cod) || fornecedoresParaInserir.Any(f => f.FornecedorCodigo == cod)) continue;
+
+                var tipoRaw = csv.GetField<string>(2) ?? "Normal";
                 var tipoLimpo = tipoRaw.Replace("NormalNormal", "Normal").Replace("ReduzidoReduzido", "Reduzido");
 
                 var fornecedor = new Fornecedor
                 {
-                    FornecedorCodigo = codigo,
-                    Nome = csv.GetField<string>("BPSNAM_0") ?? "Desconhecido",
+                    FornecedorCodigo = cod,
+                    Nome = csv.GetField<string>(1) ?? "Desconhecido",
                     Morada = null
                 };
 
-                // Adiciona imediatamente uma classificação inicial para este Fornecedor
                 fornecedor.Classificacoes.Add(new FornecedorClassificacao
                 {
                     AnoFiscal = anoAtual,
                     Classificacao = tipoLimpo
                 });
 
-                fornecedores.Add(fornecedor);
+                fornecedoresParaInserir.Add(fornecedor);
             }
 
-            await context.Fornecedores.AddRangeAsync(fornecedores);
-            await context.SaveChangesAsync();
+            if (fornecedoresParaInserir.Any())
+            {
+                Console.WriteLine($"Inserindo {fornecedoresParaInserir.Count} novos Fornecedores...");
+                await context.Fornecedores.AddRangeAsync(fornecedoresParaInserir);
+                await context.SaveChangesAsync();
+            }
         }
 
         private static async Task SeedArtigosAsync(AppDbContext context, string filePath)
         {
-            if (await context.Artigos.AnyAsync() || !File.Exists(filePath)) return;
+            if (!File.Exists(filePath)) return;
 
-            Console.WriteLine("Importando Artigos, Famílias e Diversos...");
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = ";", BadDataFound = null };
+            Console.WriteLine("Verificando Artigos (Processo de longa duração)...");
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) 
+            { 
+                Delimiter = ";", 
+                HasHeaderRecord = false, 
+                BadDataFound = null 
+            };
             using var reader = new StreamReader(filePath);
             using var csv = new CsvReader(reader, config);
             
-            csv.Read();
-            csv.ReadHeader();
+            var existingArtigos = (await context.Artigos.Select(a => a.ArtigoCodigo).ToListAsync()).ToHashSet();
+            
+            // Fix: Handle potential duplicates in DB when loading cache (e.g. from previous interrupted seeds)
+            var cacheFamilias = (await context.Familias.ToListAsync())
+                                .GroupBy(f => f.Codigo)
+                                .ToDictionary(g => g.Key, g => g.First());
+                                
 
-            var cacheFamilias = new Dictionary<string, Familia>();
-            var cacheDiversos = new Dictionary<string, Diversos>();
-            var listaArtigos = new List<Artigo>();
+            var cacheMaquinas = (await context.Maquinas.Select(m => m.MaquinaCodigo).ToListAsync()).ToHashSet();
+            
+            var batch = new List<Artigo>();
+            int processados = 0;
 
             while (csv.Read())
             {
-                var codFamilia = csv.GetField<string>("Familia_cod") ?? "DIV";
-                var descFamilia = csv.GetField<string>("Familia_desc") ?? "Família Desconhecida";
-                
-                // 1. Garante que a Família Existe
+                var cod = csv.GetField<string>(0) ?? string.Empty; 
+                if (existingArtigos.Contains(cod) || batch.Any(a => a.ArtigoCodigo == cod)) continue;
+
+                var codFamilia = csv.GetField<string>(3) ?? "DIV";
                 if (!cacheFamilias.TryGetValue(codFamilia, out var familiaObj))
                 {
-                    familiaObj = new Familia { Codigo = codFamilia, Descricao = descFamilia };
+                    familiaObj = new Familia { Codigo = codFamilia, Descricao = csv.GetField<string>(5) ?? "Família Desconhecida" };
                     cacheFamilias[codFamilia] = familiaObj;
                     context.Familias.Add(familiaObj);
                 }
 
-                // 2. Garante que um item "Diversos" existe (agora independente da Família)
-                var diversosKey = "GERAL"; // Como já não depende da família, crio um default geral ou baseado nalgum logic
-                if (!cacheDiversos.TryGetValue(diversosKey, out var diversoObj))
+
+                var maquinaCod = csv.GetField<string>(4) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(maquinaCod)) maquinaCod = "ND";
+
+                if (!cacheMaquinas.Contains(maquinaCod))
                 {
-                    diversoObj = new Diversos { Descricao = "Diverso Padrão GERAL" };
-                    cacheDiversos[diversosKey] = diversoObj;
-                    context.DiversosLista.Add(diversoObj);
+                    context.Maquinas.Add(new Maquina { 
+                        MaquinaCodigo = maquinaCod, 
+                        Descricao = $"Máquina {maquinaCod} (Auto-Gerada)", 
+                        Estado = true 
+                    });
+                    cacheMaquinas.Add(maquinaCod);
                 }
 
-                // 3. Lê o Peso (Lidar com conversões numéricas)
-                var pesoStr = csv.GetField<string>("peso");
-                decimal.TryParse(pesoStr?.Replace(".", ","), out decimal pesoDecimal);
+                decimal.TryParse(csv.GetField<string>(6)?.Replace(".", ","), out decimal pesoDecimal);
 
-                listaArtigos.Add(new Artigo
+                batch.Add(new Artigo
                 {
-                    ArtigoCodigo = csv.GetField<string>("cod") ?? string.Empty,
-                    Descricao = csv.GetField<string>("descriccao") ?? string.Empty,
-                    Categoria = csv.GetField<string>("categoria"),
-                    Unidade = csv.GetField<string>("Unidade") ?? "UN",
+                    ArtigoCodigo = cod,
+                    Descricao = csv.GetField<string>(1) ?? string.Empty,
+                    Categoria = csv.GetField<string>(2),
+                    Unidade = csv.GetField<string>(8) ?? "UN",
                     Peso = pesoDecimal,
-                    Familia = familiaObj,  // Relaciona com a Família diretamente
-                    Diversos = diversoObj, // Relaciona com Diversos
-                    MaquinaCodigo = csv.GetField<string>("maq") ?? string.Empty
+                    Familia = familiaObj,
+                    MaquinaCodigo = maquinaCod
                 });
+
+                if (batch.Count >= 500)
+                {
+                    await context.Artigos.AddRangeAsync(batch);
+                    await context.SaveChangesAsync();
+                    processados += batch.Count;
+                    Console.WriteLine($"Importados {processados} artigos...");
+                    batch.Clear();
+                }
             }
 
-            await context.Artigos.AddRangeAsync(listaArtigos);
-            await context.SaveChangesAsync();
+            if (batch.Any())
+            {
+                await context.Artigos.AddRangeAsync(batch);
+                await context.SaveChangesAsync();
+                Console.WriteLine("Concluída a importação de Artigos.");
+            }
         }
 
         private static async Task SeedCustosArtigoAsync(AppDbContext context, string filePath)
         {
-            if (await context.ArtigosCusto.AnyAsync() || !File.Exists(filePath)) return;
+            if (!File.Exists(filePath)) return;
 
-            Console.WriteLine("Importando Histórico de Custos...");
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = ";", BadDataFound = null };
+            Console.WriteLine("Iniciando importação de Custos...");
+            if (await context.ArtigosCusto.AnyAsync()) 
+            {
+                Console.WriteLine("Histórico de Custos já existe. Ignorando...");
+                return;
+            }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) 
+            { 
+                Delimiter = ";", 
+                HasHeaderRecord = false, 
+                BadDataFound = null 
+            };
             using var reader = new StreamReader(filePath);
             using var csv = new CsvReader(reader, config);
             
-            csv.Read();
-            csv.ReadHeader();
-
-            var listaCustos = new List<ArtigoCusto>();
+            var batch = new List<ArtigoCusto>();
+            var existingArtigos = (await context.Artigos.Select(a => a.ArtigoCodigo).ToListAsync()).ToHashSet();
 
             while (csv.Read())
             {
-                // Se falhar o parse numérico, default é 0
-                decimal.TryParse(csv.GetField<string>("precototal")?.Replace(".", ","), out decimal preTotal);
-                decimal.TryParse(csv.GetField<string>("matprima")?.Replace(".", ","), out decimal matPrima);
-                decimal.TryParse(csv.GetField<string>("energia")?.Replace(".", ","), out decimal energia);
-                decimal.TryParse(csv.GetField<string>("mobra")?.Replace(".", ","), out decimal mobra);
-                decimal.TryParse(csv.GetField<string>("maquina")?.Replace(".", ","), out decimal mqna);
+                var artigoCod = csv.GetField<string>(0) ?? string.Empty;
+                if (!existingArtigos.Contains(artigoCod)) continue; // Skip if article doesn't exist
+
+                decimal.TryParse(csv.GetField<string>(8)?.Replace(".", ","), out decimal preTotal); 
+                decimal.TryParse(csv.GetField<string>(3)?.Replace(".", ","), out decimal matPrima); 
+                decimal.TryParse(csv.GetField<string>(7)?.Replace(".", ","), out decimal energia); 
+                decimal.TryParse(csv.GetField<string>(5)?.Replace(".", ","), out decimal mobra);   
+                decimal.TryParse(csv.GetField<string>(4)?.Replace(".", ","), out decimal mqna);    
                 
-                var dataInicioStr = csv.GetField<string>("DATAINICIO_0");
-                DateTime dtInicio = DateTime.MinValue;
-                if (!string.IsNullOrEmpty(dataInicioStr)) DateTime.TryParse(dataInicioStr, out dtInicio);
-
-                var dataFimStr = csv.GetField<string>("DATAFIM_0");
+                DateTime.TryParse(csv.GetField<string>(1), out DateTime dtInicio);
                 DateTime? dtFim = null;
-                if (!string.IsNullOrEmpty(dataFimStr))
-                {
-                    if (DateTime.TryParse(dataFimStr, out DateTime pFim)) dtFim = pFim;
-                }
+                var dtFimStr = csv.GetField<string>(2);
+                if (!string.IsNullOrEmpty(dtFimStr) && DateTime.TryParse(dtFimStr, out DateTime pFim)) dtFim = pFim;
 
-                listaCustos.Add(new ArtigoCusto
+                batch.Add(new ArtigoCusto
                 {
-                    ArtigoCodigo = csv.GetField<string>("cod") ?? string.Empty,
-                    DataInicio = dtInicio,
-                    DataFim = dtFim,
+                    ArtigoCodigo = artigoCod,
+                    DataInicio = DateTime.SpecifyKind(dtInicio, DateTimeKind.Utc),
+                    DataFim = dtFim.HasValue ? DateTime.SpecifyKind(dtFim.Value, DateTimeKind.Utc) : null,
                     PriTotal = preTotal,
                     PraMatprim = matPrima,
                     PrecoEnergia = energia,
                     PrwiMaoobra = mobra,
                     PruMaquina = mqna,
-                    CustoPintura = 0 // O CSV não disponibiliza este campo isolado
+                    CustoPintura = 0
                 });
-            }
 
-            await context.ArtigosCusto.AddRangeAsync(listaCustos);
-            await context.SaveChangesAsync();
+                if (batch.Count >= 1000)
+                {
+                    await context.ArtigosCusto.AddRangeAsync(batch);
+                    await context.SaveChangesAsync();
+                    batch.Clear();
+                }
+            }
+            if (batch.Any())
+            {
+                await context.ArtigosCusto.AddRangeAsync(batch);
+                await context.SaveChangesAsync();
+            }
+            Console.WriteLine("Concluída a importação de Custos.");
         }
 
         private static async Task SeedRececoesAsync(AppDbContext context, string filePath)
         {
-            if (await context.RececoesInspecao.AnyAsync() || !File.Exists(filePath)) return;
+            if (!File.Exists(filePath)) return;
 
-            Console.WriteLine("Importando Receções/Guias de Entrada...");
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = ";", BadDataFound = null };
+            Console.WriteLine("Iniciando importação de Receções...");
+            if (await context.RececoesInspecao.AnyAsync()) 
+            {
+                 Console.WriteLine("Receções já existem. Ignorando...");
+                 return;
+            }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) 
+            { 
+                Delimiter = ";", 
+                HasHeaderRecord = false, 
+                BadDataFound = null 
+            };
             using var reader = new StreamReader(filePath);
             using var csv = new CsvReader(reader, config);
             
-            csv.Read();
-            csv.ReadHeader();
-
-            // Precisamos garantir que existe um Utilizador por defeito só para associar estas importações Históricas
             var utilAdmin = await context.Utilizadores.FirstOrDefaultAsync(u => u.UtilizadorCodigo == "ADMIN_SYS");
             if (utilAdmin == null)
             {
-                var cargo = await context.Cargos.FirstOrDefaultAsync() ?? new Cargo { Descricao = "Importação Sistema" };
-                var nivel = await context.Niveis.FirstOrDefaultAsync() ?? new Nivel { Descricao = "Admin" };
                 utilAdmin = new Utilizador
                 {
                     UtilizadorCodigo = "ADMIN_SYS",
                     Nome = "Sistema Importação SAGE",
                     Email = "sistema@empresa.com",
-                    Cargo = cargo,
-                    Nivel = nivel
+                    Cargo = await context.Cargos.FirstOrDefaultAsync() ?? new Cargo { Descricao = "Sistema" },
+                    Nivel = await context.Niveis.FirstOrDefaultAsync() ?? new Nivel { Descricao = "Admin" }
                 };
                 context.Utilizadores.Add(utilAdmin);
                 await context.SaveChangesAsync();
             }
 
-            var listaRececoes = new List<RececaoInspecao>();
+            var existingArtigos = (await context.Artigos.Select(a => a.ArtigoCodigo).ToListAsync()).ToHashSet();
+            var existingFornecedores = (await context.Fornecedores.Select(f => f.FornecedorCodigo).ToListAsync()).ToHashSet();
+            
+            // Carregar receções existentes na BD indexadas por (SagePedidoId, Linha)
+            var existingRececoes = await context.RececoesInspecao
+                .ToDictionaryAsync(r => (r.SagePedidoId, r.Linha));
 
+            // Chaves que vieram neste export do SAGE (para detetar cancelamentos)
+            var sageKeys = new HashSet<(string, int)>();
+
+            bool isFirstImport = !existingRececoes.Any();
+            var toAdd = new List<RececaoInspecao>();
+            
             while (csv.Read())
             {
-                decimal.TryParse(csv.GetField<string>("QT")?.Replace(".", ","), out decimal qtdRecebida);
-                decimal.TryParse(csv.GetField<string>("PRECO")?.Replace(".", ","), out decimal precoUni);
-                int.TryParse(csv.GetField<string>("LINHA"), out int linha);
+                var artigoCod = csv.GetField<string>(3) ?? string.Empty;
+                var fornecedorCod = csv.GetField<string>(2) ?? string.Empty;
 
-                var dataMovStr = csv.GetField<string>("DATAMOV");
-                DateTime dtMovimento = DateTime.Now;
-                if (!string.IsNullOrEmpty(dataMovStr)) DateTime.TryParse(dataMovStr, out dtMovimento);
+                if (!existingArtigos.Contains(artigoCod)) continue;
+                if (!existingFornecedores.Contains(fornecedorCod)) continue;
 
-                // Regra do Utilizador: Entram todas com Estado Aprovado (Inspecionadas)
-                listaRececoes.Add(new RececaoInspecao
+                var idPedido = csv.GetField<string>(0) ?? string.Empty;
+                var linhaStr = csv.GetField<string>(9);
+                int.TryParse(linhaStr, out int linha);
+                var key = (idPedido, linha);
+                sageKeys.Add(key);
+
+                decimal.TryParse(csv.GetField<string>(5)?.Replace(".", ","), out decimal qt); 
+                decimal.TryParse(csv.GetField<string>(4)?.Replace(".", ","), out decimal preco);   
+                DateTime.TryParse(csv.GetField<string>(8), out DateTime dt);
+                var dtUtc = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+
+                if (existingRececoes.TryGetValue(key, out var existing))
                 {
-                    SagePedidoId = csv.GetField<string>("RECEPRION") ?? string.Empty,
-                    Linha = linha,
-                    DataRececao = dtMovimento,
-                    QtdTotalRecebida = qtdRecebida,
-                    Quantidade = qtdRecebida, // Na primeira carga assume-se quantidade inspecionada igual à recebida
-                    DecisaoFinal = "Aprovado", // Por ordem do utilizador
-                    CustoUnitarioMomento = precoUni,
-                    Unidade = "UN", // Fallback (já que não há campo unidade no CSV de receções)
-                    FornecedorCodigo = csv.GetField<string>("TERCEIRO") ?? string.Empty,
-                    ArtigoCodigo = csv.GetField<string>("COD") ?? string.Empty,
-                    UtilizadorCodigo = utilAdmin.UtilizadorCodigo
-                });
+                    // Já existe — só atualizar se ainda Pendente (não tocar em Inspecionado/Cancelado)
+                    if (existing.Estado == "Pendente")
+                    {
+                        existing.QtdTotalRecebida = qt;
+                        existing.Quantidade = qt;
+                        existing.CustoUnitarioMomento = preco;
+                        existing.DataRececao = dtUtc;
+                    }
+                }
+                else
+                {
+                    // Novo registo — primeiro import = Inspecionado (histórico), restantes = Pendente
+                    toAdd.Add(new RececaoInspecao
+                    {
+                        SagePedidoId = idPedido, 
+                        Linha = linha,
+                        DataRececao = dtUtc,
+                        QtdTotalRecebida = qt,
+                        Quantidade = qt,
+                        Estado = isFirstImport ? "Inspecionado" : "Pendente",
+                        DecisaoFinal = isFirstImport ? "Aprovado" : null,
+                        CustoUnitarioMomento = preco,
+                        Unidade = "UN",
+                        FornecedorCodigo = fornecedorCod, 
+                        ArtigoCodigo = artigoCod,    
+                        UtilizadorCodigo = utilAdmin.UtilizadorCodigo
+                    });
+                }
             }
 
-            await context.RececoesInspecao.AddRangeAsync(listaRececoes);
-            await context.SaveChangesAsync();
+            // Detetar cancelamentos: receções Pendentes que já não aparecem no SAGE
+            int canceladas = 0;
+            foreach (var (key, rececao) in existingRececoes)
+            {
+                if (rececao.Estado == "Pendente" && !sageKeys.Contains(key))
+                {
+                    rececao.Estado = "Cancelado";
+                    canceladas++;
+                }
+            }
+
+            // Guardar tudo em batches
+            for (int i = 0; i < toAdd.Count; i += 500)
+            {
+                var batch = toAdd.Skip(i).Take(500).ToList();
+                await context.RececoesInspecao.AddRangeAsync(batch);
+                await context.SaveChangesAsync();
+            }
+            await context.SaveChangesAsync(); // guardar updates e cancelamentos
+
+            Console.WriteLine($"Receções importadas: {toAdd.Count} novas, {canceladas} canceladas.");
         }
     }
 }

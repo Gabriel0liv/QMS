@@ -27,10 +27,17 @@ namespace backend.Models
         [Required]
         public decimal QtdTotalRecebida { get; set; }
 
-        // Decisão do Inspetor de Qualidade (Aprovado, Rejeitado, etc)
+        // Estado da inspeção no ciclo de vida do QMS:
+        // "Pendente" = nova do SAGE, ainda por inspecionar
+        // "Inspecionado" = já inspecionada pelo controlo de qualidade
+        // "Cancelado" = existia mas deixou de aparecer no SAGE
         [Required]
+        [MaxLength(50)]
+        public string Estado { get; set; } = "Pendente";
+
+        // Decisão do Inspetor de Qualidade — só preenchida quando Estado = "Inspecionado"
         [MaxLength(255)]
-        public string DecisaoFinal { get; set; } = string.Empty;
+        public string? DecisaoFinal { get; set; }
 
         // Preço unitário da peça no momento da receção
         [Required]

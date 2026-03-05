@@ -50,6 +50,11 @@ namespace backend.Data
 
             modelBuilder.Entity<Familia>().HasIndex(f => f.Codigo).IsUnique();
             modelBuilder.Entity<CatalogoDefeito>().HasIndex(c => c.Codigo).IsUnique();
+
+            // Garantir que um artigo não tem a mesma propriedade PDM duplicada
+            modelBuilder.Entity<Diversos>()
+                .HasIndex(d => new { d.ArtigoCodigo, d.Propriedade })
+                .IsUnique();
             modelBuilder.Entity<TipoMovimento>().HasIndex(t => t.Descricao).IsUnique();
 
             // Garantir que a mesma linha da mesma guia não é inserida duas vezes

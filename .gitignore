@@ -1,23 +1,42 @@
-# Dependências
-node_modules/
+# --- .NET Core ---
+bin/
+obj/
+TestResults/
+[Log]*.txt
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
 
-# Builds e temporários
+# --- Node.js ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 dist/
 build/
 .temp_ag_kit/
 .agent/
 .agents/
 
-# Variáveis de ambiente
+# --- Environment Variables ---
 .env
 .env.local
+.env.*.local
 
-# Dados e Base de Dados
-data/
-*.csv
-*.db
-*.sqlite
+# --- Database & Large Data ---
+# data/
+# backend/dados/
+# *.csv
+# *.db
+# *.sqlite
+# *.sqlite3
+# *.log
 
-# Ficheiros de sistema
+# --- System Files ---
 .DS_Store
 Thumbs.db
+desktop.ini
+.stackblitzrc

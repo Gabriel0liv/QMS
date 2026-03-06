@@ -71,14 +71,14 @@ O sistema utiliza RBAC (Controlo de Acesso Baseado em Cargos). Use estas contas 
 
 ## Estrutura do Projeto
 
-- `/backend`: API e lógica de dados (C#).
-- `/frontend`: Interface de utilizador (React).
-- `/data`: Contém `docker-compose.yml` e volumes.
-- `/backend/dados`: Pasta local de CSVs para importação automática (SAGE).
+- `backend/`: Código fonte da API .NET 8.
+- `frontend/`: Código fonte da interface React.
+- `data/`: Ficheiros CSV originais (SAGE) para importação.
+- `docker-compose.yml`: Ficheiro de orquestração na raiz do projeto.
 
 ---
 
 ## Notas de Organização
 
-- **Seeder**: No primeiro arranque, o sistema cria automaticamente os utilizadores e importa artigos/fornecedores a partir dos ficheiros CSV na pasta `backend/dados`.
+- **Seeder**: O sistema procura os CSVs na pasta `backend/dados` (quando corre localmente com `dotnet run`) ou na pasta mapeada `/app/dados` (quando corre via Docker). Para que a importação local funcione, os ficheiros devem ser copiados da raiz `/data` para `/backend/dados`.
 - **Cálculo de Amostragem**: Implementado na página de Receções seguindo a norma $2 \times \sqrt{n} + 1$.

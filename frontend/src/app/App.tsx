@@ -8,17 +8,18 @@ import { AuthLayout } from './components/AuthLayout';
 function useHomeRoute(): string {
   const { user } = useAuth();
   switch (user?.role) {
-    case "operator": return "/registo-nc";
-    case "quality": return "/recepcoes";
+    case "operator":   return "/registo-nc";
+    case "quality":    return "/recepcoes";
     case "production": return "/documentos-tecnicos";
-    case "rd": return "/documentos-tecnicos";
-    case "admin": return "/gestao-utilizadores";
-    default: return "/";
+    case "rd":         return "/documentos-tecnicos";
+    case "admin":      return "/gestao-utilizadores";
+    default:           return "/";
   }
 }
 
 function AppContent() {
   const { user } = useAuth();
+  const home = useHomeRoute();
 
   if (!user) {
     return (

@@ -1,58 +1,71 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { api, ApiUser } from "../services/api";
 
 export type UserRole = "operator" | "quality" | "production" | "rd" | "admin";
 
-interface User {
-  name: string;
-  role: UserRole;
-  department: string;
+interface User extends ApiUser {
+  role: UserRole; // Mapeado do cargo do backend
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => boolean;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   hasRole: (...roles: UserRole[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const mockUsers: Record<string, { password: string; user: User }> = {
-  operador: {
-    password: "123",
-    user: { name: "Manuel Costa", role: "operator", department: "Produção" },
-  },
-  qualidade: {
-    password: "123",
-    user: { name: "João Silva", role: "quality", department: "Qualidade" },
-  },
-  producao: {
-    password: "123",
-    user: { name: "Carlos Neves", role: "production", department: "Produção" },
-  },
-  rd: {
-    password: "123",
-    user: { name: "Sofia Lopes", role: "rd", department: "I&D" },
-  },
-  admin: {
-    password: "123",
-    user: { name: "Ana Ferreira", role: "admin", department: "TI" },
-  },
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
 
-  const login = (username: string, password: string): boolean => {
-    const record = mockUsers[username.toLowerCase()];
-    if (record && record.password === password) {
-      setUser(record.user);
-      return true;
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem("qms_user");
+    if (!saved) return null;
+    try {
+      const parsed = JSON.parse(saved);
+      // Se for um utilizador antigo (que tinha 'name' em vez de 'nome'), ignoramos
+      if (parsed && !parsed.nome) {
+        localStorage.removeItem("qms_user");
+        return null;
+      }
+      // Se a sessão for antiga e não tiver 'role', mapeamos agora
+      if (parsed && !parsed.role && parsed.cargo) {
+        parsed.role = mapCargoToRole(parsed.cargo);
+      }
+      return parsed;
+    } catch {
+      return null;
     }
-    return false;
+  });
+
+  // Helper para converter a string do cargo no enum do frontend
+  function mapCargoToRole(cargo: string | null | undefined): UserRole {
+    const c = (cargo || "").toLowerCase();
+    if (c.includes("admin")) return "admin";
+    if (c.includes("qualidade")) return "quality";
+    if (c.includes("producao")) return "production";
+    if (c.includes("i&d") || c.includes("rd")) return "rd";
+    return "operator";
+  }
+
+  const login = async (username: string, password: string): Promise<void> => {
+    try {
+      const apiUser = await api.login(username, password);
+      const mappedUser: User = {
+        ...apiUser,
+        role: mapCargoToRole(apiUser.cargo)
+      };
+      setUser(mappedUser);
+      localStorage.setItem("qms_user", JSON.stringify(mappedUser));
+    } catch (error) {
+      throw error;
+    }
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("qms_user");
+  };
 
   const hasRole = (...roles: UserRole[]): boolean => {
     if (!user) return false;

@@ -12,6 +12,12 @@ build/
 .env
 .env.local
 
+# Dados e Base de Dados
+data/
+*.csv
+*.db
+*.sqlite
+
 # Ficheiros de sistema
 .DS_Store
 Thumbs.db

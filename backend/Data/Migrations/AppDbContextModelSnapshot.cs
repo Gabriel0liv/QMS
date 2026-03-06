@@ -888,6 +888,11 @@ namespace backend.Data.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("nome");
 
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("passwordhash");
+
                     b.HasKey("UtilizadorCodigo")
                         .HasName("pk_utilizadores");
 

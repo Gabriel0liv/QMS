@@ -18,12 +18,15 @@ const NAV_ITEMS: NavItem[] = [
     { to: "/registo-nc", label: "Registo NC", icon: Factory, roles: ["operator"] },
     { to: "/registo-nc?view=mobilidade", label: "Mobilidade", icon: MonitorSmartphone, roles: ["operator"], isSubItem: true },
     { to: "/registo-nc?view=chao_fabrica", label: "Chão de Fábrica", icon: Factory, roles: ["operator"], isSubItem: true },
+    
     { to: "/recepcoes", label: "Receções", icon: Package, roles: ["quality"] },
     { to: "/retrabalho", label: "Retrabalho", icon: Wrench, roles: ["quality"] },
     { to: "/catalogo-defeitos", label: "Catálogo de Defeitos", icon: Tag, roles: ["quality"] },
     { to: "/validacao-nc", label: "Validação NC", icon: ClipboardCheck, roles: ["quality"] },
+    
     { to: "/documentos-tecnicos", label: "Documentos Técnicos", icon: FileText, roles: ["quality", "production", "rd"] },
     { to: "/assinaturas", label: "Assinaturas", icon: PenLine, roles: ["quality", "production", "rd"] },
+    
     { to: "/gestao-utilizadores", label: "Utilizadores", icon: Users, roles: ["admin"] },
     { to: "/estado-sistema", label: "Estado do Sistema", icon: Server, roles: ["admin"] },
 ];
@@ -86,13 +89,13 @@ export function MainLayout() {
                     <div className="avatar placeholder">
                         <div className="bg-primary text-primary-content rounded-full w-9">
                             <span className="text-sm font-bold">
-                                {user?.name.substring(0, 2).toUpperCase()}
+                                {(user?.nome || "??").substring(0, 2).toUpperCase()}
                             </span>
                         </div>
                     </div>
                     <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-base-content">{user?.name}</p>
-                        <p className="truncate text-xs text-base-content/50">{user?.department}</p>
+                        <p className="truncate text-sm font-semibold text-base-content">{user?.nome}</p>
+                        <p className="truncate text-xs text-base-content/50">{user?.cargo}</p>
                     </div>
                 </div>
                 <button

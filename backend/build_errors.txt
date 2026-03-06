@@ -1,0 +1,17 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+C:\Users\gabri\Desktop\est├ígio\Projeto\backend\Data\DataSeeder.cs(450,9): error CS0106: The modifier 'private' is not valid for this item [C:\Users\gabri\Desktop\est├ígio\Projeto\backend\backend.csproj]
+C:\Users\gabri\Desktop\est├ígio\Projeto\backend\Data\DataSeeder.cs(459,9): error CS0106: The modifier 'private' is not valid for this item [C:\Users\gabri\Desktop\est├ígio\Projeto\backend\backend.csproj]
+C:\Users\gabri\Desktop\est├ígio\Projeto\backend\Data\DataSeeder.cs(467,9): error CS0106: The modifier 'private' is not valid for this item [C:\Users\gabri\Desktop\est├ígio\Projeto\backend\backend.csproj]
+C:\Users\gabri\Desktop\est├ígio\Projeto\backend\Data\DataSeeder.cs(510,2): error CS1513: } expected [C:\Users\gabri\Desktop\est├ígio\Projeto\backend\backend.csproj]
+
+Build FAILED.
+
+C:\Users\gabri\Desktop\est├ígio\Projeto\backend\Data\DataSeeder.cs(450,9): error CS0106: The modifier 'private' is not valid for this item [C:\Users\gabri\Desktop\est├ígio\Projeto\backend\backend.csproj]
+C:\Users\gabri\Desktop\est├ígio\Projeto\backend\Data\DataSeeder.cs(459,9): error CS0106: The modifier 'private' is not valid for this item [C:\Users\gabri\Desktop\est├ígio\Projeto\backend\backend.csproj]
+C:\Users\gabri\Desktop\est├ígio\Projeto\backend\Data\DataSeeder.cs(467,9): error CS0106: The modifier 'private' is not valid for this item [C:\Users\gabri\Desktop\est├ígio\Projeto\backend\backend.csproj]
+C:\Users\gabri\Desktop\est├ígio\Projeto\backend\Data\DataSeeder.cs(510,2): error CS1513: } expected [C:\Users\gabri\Desktop\est├ígio\Projeto\backend\backend.csproj]
+    0 Warning(s)
+    4 Error(s)
+
+Time Elapsed 00:00:01.23

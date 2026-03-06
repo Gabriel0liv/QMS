@@ -3,6 +3,7 @@ using backend.Models;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 namespace backend.Data
 {
@@ -15,11 +16,18 @@ namespace backend.Data
 
             try
             {
+                await SeedCargosAsync(context);
+                await SeedNiveisAsync(context);
+                await SeedUtilizadoresAsync(context);
+                await SeedMaquinasAsync(context); // Garante "ND" antes de tudo
                 await SeedMaquinasAsync(context, Path.Combine(dataFolder, "MAQUINAS_qms_20260304.csv"));
                 await SeedFornecedoresAsync(context, Path.Combine(dataFolder, "FORNECEDORES_qms_20260304.csv"));
                 await SeedArtigosAsync(context, Path.Combine(dataFolder, "artigos_QMS_20260304.csv"));
                 await SeedCustosArtigoAsync(context, Path.Combine(dataFolder, "ARTIGOS_CUSTO_QMS_20260304.csv"));
+                await SeedCatalogosDefeitoAsync(context);
+                await SeedTiposMovimentoAsync(context);
                 await SeedRececoesAsync(context, Path.Combine(dataFolder, "RECEPCOES_qms_20260304.csv"));
+
             }
             catch (Exception ex)
             {
@@ -287,13 +295,55 @@ namespace backend.Data
 
         private static async Task SeedRececoesAsync(AppDbContext context, string filePath)
         {
-            if (!File.Exists(filePath)) return;
-
-            Console.WriteLine("Iniciando importação de Receções...");
-            if (await context.RececoesInspecao.AnyAsync()) 
+            if (!File.Exists(filePath)) 
             {
-                 Console.WriteLine("Receções já existem. Ignorando...");
-                 return;
+                if (await context.RececoesInspecao.AnyAsync()) return;
+
+                Console.WriteLine("CSV de Receções não encontrado. Criando dados MOCK para testes...");
+
+                var utilAdmin = await context.Utilizadores.FirstOrDefaultAsync(u => u.UtilizadorCodigo == "ADMIN_SYS");
+                if (utilAdmin == null)
+                {
+                    utilAdmin = await context.Utilizadores.FirstOrDefaultAsync(u => u.UtilizadorCodigo == "administrador");
+                }
+
+                var fornecedor = await context.Fornecedores.FirstOrDefaultAsync();
+                if (fornecedor == null)
+                {
+                    fornecedor = new Fornecedor { FornecedorCodigo = "F-MOCK-01", Nome = "MetalCast Industries Mock" };
+                    context.Fornecedores.Add(fornecedor);
+                }
+
+                var familia = await context.Familias.FirstOrDefaultAsync();
+                if (familia == null)
+                {
+                    familia = new Familia { Codigo = "FAM-MOCK", Descricao = "Família Mock" };
+                    context.Familias.Add(familia);
+                }
+
+                var artigo = await context.Artigos.FirstOrDefaultAsync();
+                if (artigo == null)
+                {
+                    artigo = new Artigo { ArtigoCodigo = "01-77-216-MOCK", Descricao = "CX.7715/16X30 - 92MM CORTADO (MOCK)", Categoria = "Componente", Unidade = "kg", Peso = 1.5m, Familia = familia, MaquinaCodigo = "ND" };
+                    context.Artigos.Add(artigo);
+                }
+
+                await context.SaveChangesAsync();
+
+                if (utilAdmin != null)
+                {
+                    context.RececoesInspecao.AddRange(
+                        new RececaoInspecao { SagePedidoId = "REC-MOCK-001", Linha = 1, DataRececao = DateTime.UtcNow, QtdTotalRecebida = 300, Quantidade = 300, Estado = "Pendente", CustoUnitarioMomento = 5.5m, Unidade = "kg", FornecedorCodigo = fornecedor.FornecedorCodigo, ArtigoCodigo = artigo.ArtigoCodigo, UtilizadorCodigo = utilAdmin.UtilizadorCodigo },
+                        new RececaoInspecao { SagePedidoId = "REC-MOCK-002", Linha = 1, DataRececao = DateTime.UtcNow, QtdTotalRecebida = 200, Quantidade = 200, Estado = "Pendente", CustoUnitarioMomento = 10.0m, Unidade = "UN", FornecedorCodigo = fornecedor.FornecedorCodigo, ArtigoCodigo = artigo.ArtigoCodigo, UtilizadorCodigo = utilAdmin.UtilizadorCodigo },
+                        new RececaoInspecao { SagePedidoId = "REC-MOCK-003", Linha = 1, DataRececao = DateTime.UtcNow.AddDays(-1), QtdTotalRecebida = 350, Quantidade = 350, Estado = "Pendente", CustoUnitarioMomento = 15.0m, Unidade = "kg", FornecedorCodigo = fornecedor.FornecedorCodigo, ArtigoCodigo = artigo.ArtigoCodigo, UtilizadorCodigo = utilAdmin.UtilizadorCodigo },
+                        new RececaoInspecao { SagePedidoId = "REC-MOCK-004", Linha = 1, DataRececao = DateTime.UtcNow.AddDays(-2), QtdTotalRecebida = 750, Quantidade = 750, Estado = "Pendente", CustoUnitarioMomento = 8.5m, Unidade = "UN", FornecedorCodigo = fornecedor.FornecedorCodigo, ArtigoCodigo = artigo.ArtigoCodigo, UtilizadorCodigo = utilAdmin.UtilizadorCodigo },
+                        new RececaoInspecao { SagePedidoId = "REC-MOCK-005", Linha = 1, DataRececao = DateTime.UtcNow.AddDays(-3), QtdTotalRecebida = 400, Quantidade = 400, Estado = "Inspecionado", DecisaoFinal = "Aprovado", CustoUnitarioMomento = 12.0m, Unidade = "kg", FornecedorCodigo = fornecedor.FornecedorCodigo, ArtigoCodigo = artigo.ArtigoCodigo, UtilizadorCodigo = utilAdmin.UtilizadorCodigo }
+                    );
+                    await context.SaveChangesAsync();
+                    Console.WriteLine("5 Receções Mock inseridas com sucesso.");
+                }
+
+                return;
             }
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture) 
@@ -305,10 +355,10 @@ namespace backend.Data
             using var reader = new StreamReader(filePath);
             using var csv = new CsvReader(reader, config);
             
-            var utilAdmin = await context.Utilizadores.FirstOrDefaultAsync(u => u.UtilizadorCodigo == "ADMIN_SYS");
-            if (utilAdmin == null)
+            var utilAdminDefault = await context.Utilizadores.FirstOrDefaultAsync(u => u.UtilizadorCodigo == "ADMIN_SYS");
+            if (utilAdminDefault == null)
             {
-                utilAdmin = new Utilizador
+                utilAdminDefault = new Utilizador
                 {
                     UtilizadorCodigo = "ADMIN_SYS",
                     Nome = "Sistema Importação SAGE",
@@ -316,7 +366,7 @@ namespace backend.Data
                     Cargo = await context.Cargos.FirstOrDefaultAsync() ?? new Cargo { Descricao = "Sistema" },
                     Nivel = await context.Niveis.FirstOrDefaultAsync() ?? new Nivel { Descricao = "Admin" }
                 };
-                context.Utilizadores.Add(utilAdmin);
+                context.Utilizadores.Add(utilAdminDefault);
                 await context.SaveChangesAsync();
             }
 
@@ -379,7 +429,7 @@ namespace backend.Data
                         Unidade = "UN",
                         FornecedorCodigo = fornecedorCod, 
                         ArtigoCodigo = artigoCod,    
-                        UtilizadorCodigo = utilAdmin.UtilizadorCodigo
+                        UtilizadorCodigo = utilAdminDefault.UtilizadorCodigo
                     });
                 }
             }
@@ -405,6 +455,144 @@ namespace backend.Data
             await context.SaveChangesAsync(); // guardar updates e cancelamentos
 
             Console.WriteLine($"Receções importadas: {toAdd.Count} novas, {canceladas} canceladas.");
+        }
+
+        private static async Task SeedCatalogosDefeitoAsync(AppDbContext context)
+        {
+            if (await context.CatalogosDefeito.AnyAsync()) return;
+
+            Console.WriteLine("Semeando Catálogo de Defeitos...");
+            var defeitos = new List<CatalogoDefeito>
+            {
+                new CatalogoDefeito { Codigo = "DEF001", Descricao = "Risco/Riscos" },
+                new CatalogoDefeito { Codigo = "DEF002", Descricao = "Porosidade" },
+                new CatalogoDefeito { Codigo = "DEF003", Descricao = "Deformação" },
+                new CatalogoDefeito { Codigo = "DEF004", Descricao = "Falta de Material" },
+                new CatalogoDefeito { Codigo = "DEF005", Descricao = "Dimensional Incorreto" },
+                new CatalogoDefeito { Codigo = "DEF006", Descricao = "Problema de Acabamento" },
+                new CatalogoDefeito { Codigo = "DEF007", Descricao = "Mancha/Oxidação" },
+                new CatalogoDefeito { Codigo = "DEF008", Descricao = "Quebra/Fenda" }
+            };
+
+            await context.CatalogosDefeito.AddRangeAsync(defeitos);
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedMaquinasAsync(AppDbContext context)
+        {
+            if (await context.Maquinas.AnyAsync(m => m.MaquinaCodigo == "ND")) return;
+            
+            context.Maquinas.Add(new Maquina 
+            { 
+                MaquinaCodigo = "ND", 
+                Descricao = "Máquina Não Definida", 
+                Estado = true 
+            });
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedTiposMovimentoAsync(AppDbContext context)
+        {
+            if (await context.TiposMovimento.AnyAsync()) return;
+
+            Console.WriteLine("Semeando Tipos de Movimento...");
+            var tipos = new List<TipoMovimento>
+            {
+                new TipoMovimento { Descricao = "Incidente" },
+                new TipoMovimento { Descricao = "Não Conformidade" },
+                new TipoMovimento { Descricao = "Retrabalho" }
+            };
+
+            await context.TiposMovimento.AddRangeAsync(tipos);
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedCargosAsync(AppDbContext context)
+        {
+            if (!await context.Cargos.AnyAsync(c => c.Descricao == "Operador"))
+                context.Cargos.Add(new Cargo { Descricao = "Operador" });
+                
+            if (!await context.Cargos.AnyAsync(c => c.Descricao == "Qualidade"))
+                context.Cargos.Add(new Cargo { Descricao = "Qualidade" });
+                
+            if (!await context.Cargos.AnyAsync(c => c.Descricao == "Administrador"))
+                context.Cargos.Add(new Cargo { Descricao = "Administrador" });
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedNiveisAsync(AppDbContext context)
+        {
+            if (!await context.Niveis.AnyAsync(n => n.Descricao == "Total"))
+                context.Niveis.Add(new Nivel { Descricao = "Total" });
+
+            if (!await context.Niveis.AnyAsync(n => n.Descricao == "Parcial"))
+                context.Niveis.Add(new Nivel { Descricao = "Parcial" });
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedUtilizadoresAsync(AppDbContext context)
+        {
+            if (await context.Utilizadores.AnyAsync(u => u.UtilizadorCodigo == "administrador")) return;
+
+            // Buscar IDs dinamicamente para evitar erro de FK
+            var cargoOperador = await context.Cargos.FirstOrDefaultAsync(c => c.Descricao == "Operador");
+            var cargoQualidade = await context.Cargos.FirstOrDefaultAsync(c => c.Descricao == "Qualidade");
+            var cargoAdmin = await context.Cargos.FirstOrDefaultAsync(c => c.Descricao == "Administrador");
+            
+            var nivelTotal = await context.Niveis.FirstOrDefaultAsync(n => n.Descricao == "Total");
+            var nivelParcial = await context.Niveis.FirstOrDefaultAsync(n => n.Descricao == "Parcial");
+
+            if (cargoAdmin == null || nivelTotal == null) 
+            {
+                Console.WriteLine("ERRO: Cargos ou Níveis base não encontrados para criar utilizadores.");
+                return;
+            }
+
+            // Admin
+            context.Utilizadores.Add(new Utilizador
+            {
+                UtilizadorCodigo = "administrador",
+                Nome = "Administrador do Sistema",
+                Email = "admin@gns.pt",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                Active = true,
+                CargoId = cargoAdmin.Id,
+                NivelId = nivelTotal.Id
+            });
+
+            // Operador
+            if (cargoOperador != null && nivelParcial != null)
+            {
+                context.Utilizadores.Add(new Utilizador
+                {
+                    UtilizadorCodigo = "operador",
+                    Nome = "Operador da Fábrica",
+                    Email = "operador@gns.pt",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("operador123"),
+                    Active = true,
+                    CargoId = cargoOperador.Id,
+                    NivelId = nivelParcial.Id
+                });
+            }
+
+            // Qualidade
+            if (cargoQualidade != null && nivelParcial != null)
+            {
+                context.Utilizadores.Add(new Utilizador
+                {
+                    UtilizadorCodigo = "qualidade",
+                    Nome = "Técnico de Qualidade",
+                    Email = "qualidade@gns.pt",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("qualidade123"),
+                    Active = true,
+                    CargoId = cargoQualidade.Id,
+                    NivelId = nivelParcial.Id
+                });
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 }

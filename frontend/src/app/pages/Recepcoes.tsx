@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { FileText, CheckCircle, XCircle, Package, Calendar, User, AlertTriangle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FileText, CheckCircle, XCircle, Package, Calendar, User, AlertTriangle, RefreshCw } from "lucide-react";
+import { api, ApiRececaoInspecao } from "../services/api";
 
 interface ArtigoRecepcao {
   codigo: string;
@@ -28,89 +29,81 @@ interface InspecaoArtigo {
   status: "pendente" | "aprovado" | "rejeitado";
 }
 
-const mockRecepcoes: Recepcao[] = [
-  {
-    id: "1",
-    numeroRecepcao: "REC-2026-0423",
-    data: "2026-02-26",
-    fornecedor: "MetalCast Industries",
-    artigos: [
-      { codigo: "01-77-216", descricao: "CX.7715/16X30 - 92MM CORTADO", quantidade: 300, unidade: "kg" },
-      { codigo: "01-37-001-09", descricao: "ESPELHO 3730 MARCADO", quantidade: 200, unidade: "UN" }
-    ],
-    status: "pendente"
-  },
-  {
-    id: "2",
-    numeroRecepcao: "REC-2026-0422",
-    data: "2026-02-26",
-    fornecedor: "ZincoPro Ltd",
-    artigos: [
-      { codigo: "03-15-049-11", descricao: "TAMPA 1510 VIBRADO (CONES)", quantidade: 350, unidade: "kg" }
-    ],
-    status: "pendente"
-  },
-  {
-    id: "3",
-    numeroRecepcao: "REC-2026-0421",
-    data: "2026-02-25",
-    fornecedor: "CopperTech SA",
-    artigos: [
-      { codigo: "08-AK-003-11", descricao: "PUNHO AAJ100 VIBRADO", quantidade: 200, unidade: "UN" }
-    ],
-    status: "pendente"
-  },
-  {
-    id: "4",
-    numeroRecepcao: "REC-2026-0420",
-    data: "2026-02-25",
-    fornecedor: "SteelWork International",
-    artigos: [
-      { codigo: "01-77-234-24", descricao: "ESPELHO 7707 PEQ. PONTAS", quantidade: 750, unidade: "UN" }
-    ],
-    status: "pendente"
-  },
-  {
-    id: "5",
-    numeroRecepcao: "REC-2026-0419",
-    data: "2026-02-24",
-    fornecedor: "MetalCast Industries",
-    artigos: [
-      { codigo: "08-28-040-11", descricao: "PUNHO 2801 VIBRADO (CONES)", quantidade: 400, unidade: "kg" }
-    ],
-    status: "pendente"
+// Remove mockRecepcoes
+function mapBackendStatus(estado: string, decisaoFinal?: string): "pendente" | "aprovado" | "rejeitado" {
+  if (estado === "Pendente") return "pendente";
+  if (estado === "Inspecionado") {
+    if (decisaoFinal?.toLowerCase() === "aprovado") return "aprovado";
+    if (decisaoFinal?.toLowerCase() === "rejeitado") return "rejeitado";
   }
-];
+  return "pendente"; // Default fallback
+}
 
 export function Recepcoes() {
   const [selectedInspecao, setSelectedInspecao] = useState<InspecaoArtigo | null>(null);
+  const [inspecoes, setInspecoes] = useState<InspecaoArtigo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [numCaixasEntregues, setNumCaixasEntregues] = useState<number | "">("");
 
-  // Flatten the data: one inspection per article
-  const inspecoes: InspecaoArtigo[] = mockRecepcoes.flatMap(recepcao => 
-    recepcao.artigos.map(artigo => ({
-      inspecaoId: `${recepcao.id}-${artigo.codigo}`,
-      recepcaoId: recepcao.id,
-      numeroRecepcao: recepcao.numeroRecepcao,
-      data: recepcao.data,
-      fornecedor: recepcao.fornecedor,
-      artigo: artigo,
-      status: recepcao.status
-    }))
-  );
+  const fetchRececoes = async () => {
+    try {
+      setLoading(true);
+      const res = await api.getRececoesInspecao();
+      
+      const mapped: InspecaoArtigo[] = res.items.map((item: ApiRececaoInspecao) => ({
+        inspecaoId: item.id.toString(),
+        recepcaoId: item.id.toString(),
+        numeroRecepcao: item.sagePedidoId,
+        data: new Date(item.dataRececao).toISOString().split('T')[0],
+        fornecedor: item.fornecedor?.nome || item.fornecedorCodigo,
+        artigo: {
+          codigo: item.artigoCodigo,
+          descricao: item.artigo?.descricao || "ND",
+          quantidade: item.quantidade,
+          unidade: item.unidade
+        },
+        status: mapBackendStatus(item.estado, item.decisaoFinal)
+      }));
+      
+      setInspecoes(mapped);
+    } catch (error) {
+      console.error("Erro ao carregar receções:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRececoes();
+  }, []);
 
   const amostragem = selectedInspecao ? (() => {
+    const n = typeof numCaixasEntregues === "number" ? numCaixasEntregues : 0;
+    const caixasParaAbrir = n > 0 ? Math.round(2 * Math.sqrt(n) + 1) : 0;
+    
+    // Antiga lógica (mantendo para referência se necessário ou removendo se preferir)
     const qty = selectedInspecao.artigo.quantidade;
-    const amostra = Math.max(10, Math.ceil(qty * 0.03));
-    const caixas = Math.ceil(amostra / 5);
-    return { amostra, caixas };
+    const amostraPeças = Math.max(10, Math.ceil(qty * 0.03));
+    
+    return { amostraPeças, caixasParaAbrir };
   })() : null;
 
   return (
     <div className="p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Receções</h1>
-        <p className="text-gray-700 mt-1">Inspeção de Matéria-Prima e Componentes</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Receções</h1>
+          <p className="text-gray-700 mt-1">Inspeção de Matéria-Prima e Componentes</p>
+        </div>
+        <button 
+          className="btn btn-outline btn-sm gap-2"
+          onClick={fetchRececoes}
+          disabled={loading}
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </button>
       </div>
 
       {!selectedInspecao ? (
@@ -139,45 +132,60 @@ export function Recepcoes() {
                   </tr>
                 </thead>
                 <tbody>
-                  {inspecoes.map((inspecao) => (
-                    <tr key={inspecao.inspecaoId} className="hover:bg-blue-50 border-b border-gray-200">
-                      <td className="font-mono font-semibold text-gray-900">{inspecao.numeroRecepcao}</td>
-                      <td className="font-mono text-sm text-gray-900">• {inspecao.artigo.codigo}</td>
-                      <td className="text-xs text-gray-700 max-w-xs">{inspecao.artigo.descricao}</td>
-                      <td className="text-gray-900">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-500" />
-                          {inspecao.data}
-                        </div>
-                      </td>
-                      <td className="text-gray-900">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-500" />
-                          {inspecao.fornecedor}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge badge-sm font-bold uppercase ${
-                          inspecao.status === "pendente" ? "badge-warning" : 
-                          inspecao.status === "aprovado" ? "badge-success" : "badge-error"
-                        }`}>
-                          {inspecao.status}
-                        </span>
-                      </td>
-                      <td className="text-right text-gray-900">
-                        <span className="font-semibold">{inspecao.artigo.quantidade}</span> {inspecao.artigo.unidade}
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-primary btn-sm text-white"
-                          onClick={() => setSelectedInspecao(inspecao)}
-                        >
-                          <Package className="w-4 h-4" />
-                          Inspecionar
-                        </button>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-10">
+                        <span className="loading loading-spinner text-primary"></span>
+                        <p className="mt-2 text-sm text-gray-500">A carregar receções...</p>
                       </td>
                     </tr>
-                  ))}
+                  ) : inspecoes.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-10 text-gray-500">
+                        Nenhuma receção pendente de inspeção.
+                      </td>
+                    </tr>
+                  ) : (
+                    inspecoes.map((inspecao) => (
+                      <tr key={inspecao.inspecaoId} className="hover:bg-blue-50 border-b border-gray-200">
+                        <td className="font-mono font-semibold text-gray-900">{inspecao.numeroRecepcao}</td>
+                        <td className="font-mono text-sm text-gray-900">• {inspecao.artigo.codigo}</td>
+                        <td className="text-xs text-gray-700 max-w-xs">{inspecao.artigo.descricao}</td>
+                        <td className="text-gray-900">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-500" />
+                            {inspecao.data}
+                          </div>
+                        </td>
+                        <td className="text-gray-900">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-500" />
+                            {inspecao.fornecedor}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`badge badge-sm font-bold uppercase ${
+                            inspecao.status === "pendente" ? "badge-warning" : 
+                            inspecao.status === "aprovado" ? "badge-success" : "badge-error"
+                          }`}>
+                            {inspecao.status}
+                          </span>
+                        </td>
+                        <td className="text-right text-gray-900">
+                          <span className="font-semibold">{inspecao.artigo.quantidade}</span> {inspecao.artigo.unidade}
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-primary btn-sm text-white"
+                            onClick={() => setSelectedInspecao(inspecao)}
+                          >
+                            <Package className="w-4 h-4" />
+                            Inspecionar
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -259,25 +267,41 @@ export function Recepcoes() {
                   <h2 className="card-title text-xl mb-4 text-gray-900">Painel de Inspeção</h2>
 
                   {/* Sampling Information */}
-                  {amostragem && (
-                    <div className="space-y-4 mb-6">
-                      <div className="stats stats-vertical shadow-lg bg-blue-50 border-2 border-blue-300 w-full">
-                        <div className="stat">
-                          <div className="stat-title text-gray-900 font-semibold">Amostragem Calculada</div>
-                          <div className="stat-value text-primary">{amostragem.amostra} peças</div>
-                          <div className="stat-desc text-gray-700">Segundo norma ISO 2859-1</div>
-                        </div>
-                      </div>
-
-                      <div className="stats stats-vertical shadow-lg bg-amber-50 border-2 border-amber-300 w-full">
-                        <div className="stat">
-                          <div className="stat-title text-gray-900 font-semibold">Caixas a Abrir</div>
-                          <div className="stat-value text-warning">{amostragem.caixas} caixas</div>
-                          <div className="stat-desc text-gray-700">Total estimado de caixas</div>
-                        </div>
-                      </div>
+                  <div className="space-y-4 mb-6">
+                    <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 shadow-sm">
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                        Nº de Caixas Entregues (n)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="input input-bordered w-full bg-white text-gray-900"
+                        placeholder="Insira o total de caixas..."
+                        value={numCaixasEntregues}
+                        onChange={(e) => setNumCaixasEntregues(e.target.value === "" ? "" : Number(e.target.value))}
+                      />
                     </div>
-                  )}
+
+                    {amostragem && (
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="stats shadow-lg bg-blue-50 border-2 border-blue-300 w-full">
+                          <div className="stat">
+                            <div className="stat-title text-gray-900 font-semibold">Peças a Inspecionar</div>
+                            <div className="stat-value text-primary text-2xl">{amostragem.amostraPeças}</div>
+                            <div className="stat-desc text-gray-700">3% do lote (mín. 10)</div>
+                          </div>
+                        </div>
+
+                        <div className="stats shadow-lg bg-amber-50 border-2 border-amber-300 w-full">
+                          <div className="stat">
+                            <div className="stat-title text-gray-900 font-semibold">Caixas a Abrir</div>
+                            <div className="stat-value text-warning text-2xl">{amostragem.caixasParaAbrir}</div>
+                            <div className="stat-desc text-gray-700">Fórmula: 2 * √n + 1</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* X3 Action Panel Notice */}
                   <div className="space-y-6">

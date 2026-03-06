@@ -8,7 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Ativa as ferramentas de documentação (Swagger)
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -41,7 +45,16 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     // A pasta /app/dados reflete os mapeamentos configurados no docker-compose.yml 
     // Em caso de corrrer sem docker, pode colocar um caminho local (ex: ./dados)
-    var dataFolder = Environment.GetEnvironmentVariable("DATA_FOLDER") ?? "/app/dados"; 
+    // Em caso de correr sem docker, usa a pasta "dados" local
+    var dataFolder = Environment.GetEnvironmentVariable("DATA_FOLDER") ?? 
+                     (app.Environment.IsDevelopment() ? Path.Combine(Directory.GetCurrentDirectory(), "dados") : "/app/dados");
+    
+    // Garantir que a pasta existe se estivermos localmente
+    if (app.Environment.IsDevelopment() && !Directory.Exists(dataFolder))
+    {
+        Directory.CreateDirectory(dataFolder);
+    }
+
     await DataSeeder.SeedDataAsync(context, dataFolder);
 }
 

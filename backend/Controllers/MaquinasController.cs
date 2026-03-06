@@ -16,11 +16,18 @@ namespace backend.Controllers
             _context = context;
         }
 
-        // GET: api/Maquinas
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Maquina>>> GetMaquinas()
+        public async Task<ActionResult<IEnumerable<Maquina>>> GetMaquinas([FromQuery] string? search)
         {
-            return await _context.Maquinas.ToListAsync();
+            var query = _context.Maquinas.AsQueryable();
+            
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(m => m.MaquinaCodigo.ToLower().Contains(term) || m.Descricao.ToLower().Contains(term));
+            }
+
+            return await query.OrderBy(m => m.MaquinaCodigo).Take(15).ToListAsync();
         }
 
         // GET: api/Maquinas/5

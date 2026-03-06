@@ -45,5 +45,9 @@ namespace backend.Models
 
         // Um utilizador pode ter várias assinaturas de documentos
         public ICollection<AssinaturaDocumento> Assinaturas { get; set; } = new List<AssinaturaDocumento>();
+    
+        // password encriptada
+        [Required]
+        public string PasswordHash { get; set; } = string.Empty;
     }
 }
